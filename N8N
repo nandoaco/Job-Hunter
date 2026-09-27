@@ -1,0 +1,435 @@
+{
+  "name": "Job Hunter",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Função nativa simples para gerar hash numérico em string sem bibliotecas externas\nfunction gerarHashSimples(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    const char = str.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash; // Converte para inteiro de 32 bits\n  }\n  return 'job_' + Math.abs(hash).toString(16);\n}\n\n// Obtém os parâmetros definidos no nó 'Meu Perfil'\nconst perfil = $('Meu Perfil').first().json;\nconst palavrasProibidas = (perfil.palavras_proibidas || []).map(p => p.toLowerCase());\n\nconst vagasProcessadas = [];\n\nfor (const item of $input.all()) {\n  const vaga = item.json;\n  \n  // 1. Gera a chave e o identificador canónico de deduplicação\n  const empresaLimpa = (vaga.empresa || '').trim().toLowerCase();\n  const tituloLimpo = (vaga.titulo || '').trim().toLowerCase();\n  const localizacaoLimpa = (vaga.localizacao || '').trim().toLowerCase();\n  \n  const rawKey = `${empresaLimpa}_${tituloLimpo}_${localizacaoLimpa}`;\n  const hash = gerarHashSimples(rawKey);\n\n  // 2. Verificação de termos proibidos no título\n  const possuiTermoProibido = palavrasProibidas.some(termo => tituloLimpo.includes(termo));\n\n  let aprovadaNaTriagem = true;\n  let motivoDescarte = null;\n\n  if (possuiTermoProibido) {\n    aprovadaNaTriagem = false;\n    motivoDescarte = \"Título contém termo proibido pela senioridade\";\n  }\n\n  // 3. Estruturação dos dados\n  vagasProcessadas.push({\n    json: {\n      hash_dedup: hash,\n      titulo: vaga.titulo,\n      empresa: vaga.empresa,\n      localizacao: vaga.localizacao,\n      modelo_trabalho: vaga.modelo_trabalho,\n      senioridade_declarada: vaga.senioridade,\n      url_original: vaga.url,\n      fonte: vaga.fonte,\n      descricao_raw: vaga.descricao,\n      aprovada_triagem: aprovadaNaTriagem,\n      motivo_descarte: motivoDescarte\n    }\n  });\n}\n\nreturn vagasProcessadas;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        112
+      ],
+      "id": "d834aec4-9c22-448d-a85f-5f8fdf921a49",
+      "name": "Normalizacao e Triagem"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f31c21ea-9d6a-4fe6-9be7-3ecc7ecbdc37",
+              "leftValue": "={{ $json.aprovada_triagem }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        -64
+      ],
+      "id": "2e4b3f35-e4d1-4e8c-b9b6-b31bfa2871a8",
+      "name": "Passou na Triagem?"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -576,
+        -80
+      ],
+      "id": "5ed9f617-0d83-436e-94d2-f591a17cbcbd",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"cargos_alvo\": [\"Analista SOC Jr\", \"Analista de Cibersegurança Jr\", \"Analista Blue Team Jr\"],\n  \"senioridade\": \"Junior\",\n  \"skills\": [\"Redes\", \"Windows\", \"Segurança da Informação\", \"Linux\", \"IAM\"],\n  \"palavras_proibidas\": [\"Senior\", \"Sênior\", \"Pleno\", \"Especialista\", \"Lead\", \"DevOps\", \"Vendas\"]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -384,
+        -80
+      ],
+      "id": "06e4a339-15fc-4fdc-bb4c-949913ea8956",
+      "name": "Meu Perfil"
+    },
+    {
+      "parameters": {
+        "tableId": "vagas",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "hash_dedup",
+              "fieldValue": "={{ $json.hash_dedup }}"
+            },
+            {
+              "fieldId": "titulo",
+              "fieldValue": "={{ $json.titulo }}"
+            },
+            {
+              "fieldId": "empresa",
+              "fieldValue": "={{ $json.empresa }}"
+            },
+            {
+              "fieldId": "localizacao",
+              "fieldValue": "={{ $json.localizacao }}"
+            },
+            {
+              "fieldId": "modelo_trabalho",
+              "fieldValue": "={{ $json.modelo_trabalho }}"
+            },
+            {
+              "fieldId": "senioridade_declarada",
+              "fieldValue": "={{ $json.senioridade_declarada }}"
+            },
+            {
+              "fieldId": "url_original",
+              "fieldValue": "={{ $json.url_original }}"
+            },
+            {
+              "fieldId": "fonte",
+              "fieldValue": "={{ $json.fonte }}"
+            },
+            {
+              "fieldId": "descricao_raw",
+              "fieldValue": "={{ $json.descricao_raw }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        112,
+        64
+      ],
+      "id": "3fc1feda-63e8-4850-82c5-6f7f37d99ad2",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "EcdnPfuTahU1zM6h",
+          "name": "Supabase account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Você é um avaliador técnico sênior de recrutamento especializado em Cibersegurança.\nSua missão é comparar o perfil do candidato com a descrição da vaga e retornar ESTRITAMENTE um objeto JSON válido (sem blocos markdown ```json, sem comentários adicionais).\n\nPERFIL DO CANDIDATO:\n- Cargos Alvo: {{ $('Meu Perfil').first().json.cargos_alvo.join(', ') }}\n- Senioridade: {{ $('Meu Perfil').first().json.senioridade }}\n- Competências: {{ $('Meu Perfil').first().json.skills.join(', ') }}\n\nVAGA A SER AVALIADA:\n- Cargo: {{ $json.titulo }}\n- Empresa: {{ $json.empresa }}\n- Modelo: {{ $json.modelo_trabalho }}\n- Descrição: {{ $json.descricao_raw }}\n\nREGRAS DE CÁLCULO:\n- Score de 0 a 100 baseado na compatibilidade de skills, senioridade e modelo.\n- Se a senioridade for compatível (Junior) e tiver skills de Redes/Windows/Segurança, o score deve ficar acima de 70.\n- Nível de aderência: 'ALTO' (score >= 75), 'MEDIO' (50 a 74), 'BAIXO' (< 50).\n\nFORMATO DE RESPOSTA OBRIGATÓRIO (JSON PURO):\n{\n  \"score_match\": 85,\n  \"nivel_aderencia\": \"ALTO\",\n  \"pontos_fortes\": [\"item 1\", \"item 2\"],\n  \"gaps\": [\"item 1\"],\n  \"requisitos_eliminatorios\": [],\n  \"justificativa\": \"Texto explicativo resumido em até duas linhas.\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -208
+      ],
+      "id": "b8f1db56-0d16-4858-b8eb-382dee734107",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Y4xSl1nY8BBnhFg4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  // Pega o texto exatamente na estrutura retornada pelo nó do Gemini\n  let rawText = '';\n  \n  if (item.json.content?.parts?.[0]?.text) {\n    rawText = item.json.content.parts[0].text;\n  } else if (typeof item.json.text === 'string') {\n    rawText = item.json.text;\n  } else if (item.json.candidates?.[0]?.content?.parts?.[0]?.text) {\n    rawText = item.json.candidates[0].content.parts[0].text;\n  } else {\n    rawText = String(item.json.text || item.json.content || '');\n  }\n\n  // Remove eventuais marcações de markdown ```json\n  rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();\n\n  let parsed = {};\n  try {\n    parsed = JSON.parse(rawText);\n  } catch (e) {\n    parsed = {\n      score_match: 50,\n      nivel_aderencia: 'MEDIO',\n      pontos_fortes: [],\n      gaps: ['Falha no parser JSON'],\n      requisitos_eliminatorios: [],\n      justificativa: 'Não foi possível interpretar a resposta estruturada.'\n    };\n  }\n\n  // Atribui os campos calculados para gravação no banco\n  item.json.score_match = parsed.score_match;\n  item.json.nivel_aderencia = parsed.nivel_aderencia;\n  item.json.pontos_fortes = parsed.pontos_fortes;\n  item.json.gaps = parsed.gaps;\n  item.json.requisitos_eliminatorios = parsed.requisitos_eliminatorios;\n  item.json.justificativa = parsed.justificativa;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -208
+      ],
+      "id": "960a53fa-c76b-4cd4-af10-93f3a99a0efd",
+      "name": "Tratar Resposta IA"
+    },
+    {
+      "parameters": {
+        "url": "https://jsearch.p.rapidapi.com/search-v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=query",
+              "value": "=Analista SOC Junior OR Ciberseguranca Junior"
+            },
+            {
+              "name": "=country",
+              "value": "=br"
+            },
+            {
+              "name": "num_pages",
+              "value": "2"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -544,
+        112
+      ],
+      "id": "b9216a02-cfae-48de-8eb0-0da2dc6d3355",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "whrzguRoaKMUefXr",
+          "name": "RapidAPI JSearch Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputJson = $input.first().json;\n// Na versão v2 da JSearch, a lista fica em data.jobs\nconst items = inputJson.data?.jobs || inputJson.data || [];\n\nreturn items.map(vaga => ({\n  json: {\n    titulo: vaga.job_title || 'Cargo não informado',\n    empresa: vaga.employer_name || 'Empresa Confidencial',\n    localizacao: `${vaga.job_city || ''} ${vaga.job_state || ''}`.trim() || 'Brasil',\n    modelo_trabalho: vaga.job_is_remote ? 'Remoto' : 'Híbrido/Presencial',\n    senioridade: 'Junior',\n    descricao: vaga.job_description || '',\n    url: vaga.job_apply_link || vaga.job_google_link || vaga.job_offer_expiration_timestamp_hash || 'https://google.com/search?q=' + encodeURIComponent(vaga.job_title + ' ' + vaga.employer_name),\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        112
+      ],
+      "id": "56c9f902-ebf5-404c-bc7d-7f401083a9d7",
+      "name": "Formatar Vagas da API"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf64d1fd-d98d-42e7-8870-730b8ccb7dbb",
+              "leftValue": "={{ $json.score_match }}",
+              "rightValue": 50,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        -208
+      ],
+      "id": "a08ecf12-a151-470b-a1bc-79d1ea9cb042",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "fromEmail": "nandoaco@gmail.com",
+        "toEmail": "nandoaco@gmail.com",
+        "subject": "=🔥 Nova Vaga Match {{ $json.score_match }}%: {{ $json.titulo || $('Formatar Vagas da API').item.json.titulo }} na {{ $json.empresa || $('Formatar Vagas da API').item.json.empresa }}",
+        "html": "=<div style=\"font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px; border-radius: 12px; max-width: 600px; border: 1px solid #334155;\">\n  <div style=\"border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 16px;\">\n    <span style=\"background-color: #059669; color: #ffffff; font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;\">\n      Match: {{ $json.score_match }}% ({{ $json.nivel_aderencia }})\n    </span>\n    <h2 style=\"margin: 8px 0 0 0; color: #ffffff; font-size: 20px;\">{{ $json.titulo }}</h2>\n    <p style=\"margin: 4px 0 0 0; color: #94a3b8; font-size: 14px;\"><strong>{{ $json.empresa }}</strong> • {{ $json.modelo_trabalho }} ({{ $json.localizacao }})</p>\n  </div>\n\n  <div style=\"background-color: #1e293b; padding: 14px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #334155;\">\n    <h4 style=\"margin: 0 0 6px 0; color: #818cf8; font-size: 13px; text-transform: uppercase;\">Análise Técnica da IA</h4>\n    <p style=\"margin: 0; color: #cbd5e1; font-size: 13px; line-height: 1.5; font-style: italic;\">\n      \"{{ $json.justificativa }}\"\n    </p>\n  </div>\n\n  <div style=\"margin-bottom: 14px;\">\n    <h4 style=\"margin: 0 0 6px 0; color: #34d399; font-size: 13px; text-transform: uppercase;\">Pontos Fortes Identificados:</h4>\n    <p style=\"margin: 0; color: #e2e8f0; font-size: 13px; line-height: 1.6;\">\n      {{ ($json.pontos_fortes || []).join(' • ') }}\n    </p>\n  </div>\n\n  <div style=\"margin-bottom: 20px;\">\n    <h4 style=\"margin: 0 0 6px 0; color: #fb7185; font-size: 13px; text-transform: uppercase;\">Gaps / Requisitos a Atenção:</h4>\n    <p style=\"margin: 0; color: #e2e8f0; font-size: 13px; line-height: 1.6;\">\n      {{ ($json.gaps || []).join(' • ') }}\n    </p>\n  </div>\n\n  <div style=\"text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #334155;\">\n    <a href=\"{{ $json.url_original }}\" style=\"background-color: #4f46e5; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-block; margin-right: 8px;\">\n      Acessar Inscrição da Vaga\n    </a>\n    <a href=\"https://job-hunter-tawny-zeta.vercel.app/\" style=\"background-color: #334155; color: #f8fafc; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-block;\">\n      Ver no Dashboard\n    </a>\n  </div>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        608,
+        -224
+      ],
+      "id": "c12ea82a-5d5a-4c5c-b918-e64e4e65c034",
+      "name": "Send an Email",
+      "webhookId": "22ec9110-bae7-474d-a14d-3ecbc405dbc0",
+      "credentials": {
+        "smtp": {
+          "id": "gGDmVGGLboNPpRoh",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Normalizacao e Triagem": {
+      "main": [
+        [
+          {
+            "node": "Passou na Triagem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Passou na Triagem?": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Meu Perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meu Perfil": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Tratar Resposta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tratar Resposta IA": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Formatar Vagas da API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Vagas da API": {
+      "main": [
+        [
+          {
+            "node": "Normalizacao e Triagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "546cd9eb-5555-4dcd-8520-a0ba3e96f0b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "993e0d1296e5d712df2ded910daec8c337a1ea4bb8c9e912e22d5089055eed66"
+  },
+  "nodeGroups": [],
+  "id": "ZKFk2uIPXhJ9uGTo",
+  "tags": []
+}
