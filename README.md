@@ -39,8 +39,7 @@ para confrontar com a matriz de competências do candidato, persiste o históric
    
    [ Supabase Database ]     [ Condição Match >= 75% ]
 
-            │                           │
-            ▼                           ▼
+            │                           │                             
   [ Dashboard Vercel ]      [ Alerta HTML no Gmail ]
 
   ## 🚀 Funcionalidades Principais
