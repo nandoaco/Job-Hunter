@@ -7,6 +7,7 @@ export default function App() {
   const [filtroNivel, setFiltroNivel] = useState('TODOS');
   const [termoBusca, setTermoBusca] = useState('');
   const [vagaSelecionada, setVagaSelecionada] = useState(null);
+  const [atualizando, setAtualizando] = useState(false);
 
   // Busca vagas do Supabase
   const carregarVagas = async () => {
