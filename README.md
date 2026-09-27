@@ -18,29 +18,26 @@ O **Job Hunter SOC** foi concebido para eliminar o trabalho manual de busca e an
 O sistema ingere oportunidades recentes no mercado brasileiro, normaliza os dados, submete cada descrição técnica ao modelo **Google Gemini** 
 para confrontar com a matriz de competências do candidato, persiste o histórico analítico e dispara alertas prioritários.
 
-[ Schedule Trigger (n8n) ]
+          [ Schedule Trigger (n8n) ]
 
-               │
-               ▼
-
-   [ RapidAPI / JSearch (BR) ]
+                         │
+               
+         [ RapidAPI / JSearch (BR) ]
    
-               │
-               ▼
-
- [ Normalização & Triagem Inicial ]
+                         │
+               
+         [ Normalização & Triagem Inicial ]
  
-               │
-               ▼
-
-  [ Google Gemini AI (Match Scoring) ]
+                         │
+                 
+        [ Google Gemini AI (Match Scoring) ]
   
-   ┌───────────┴───────────┐
+           ┌───────────┴───────────┐
    
-   [ Supabase Database ]     [ Condição Match >= 75% ]
+       [ Supabase Database ]     [ Condição Match >= 75% ]
 
-            │                           │                             
-  [ Dashboard Vercel ]      [ Alerta HTML no Gmail ]
+                │                           │                             
+      [ Dashboard Vercel ]      [ Alerta HTML no Gmail ]
 
   ## 🚀 Funcionalidades Principais
 
