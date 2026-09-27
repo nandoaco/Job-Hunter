@@ -23,22 +23,22 @@ para confrontar com a matriz de competências do candidato, persiste o históric
                │
                ▼
 
-               
    [ RapidAPI / JSearch (BR) ]
    
                │
                ▼
 
-               
  [ Normalização & Triagem Inicial ]
+ 
                │
                ▼
 
-               
   [ Google Gemini AI (Match Scoring) ]
+  
                │
    ┌───────────┴───────────┐
    ▼                       ▼
+   
    [ Supabase Database ]     [ Condição Match >= 75% ]
 
             │                           │
