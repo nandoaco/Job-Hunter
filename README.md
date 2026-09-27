@@ -21,12 +21,18 @@ para confrontar com a matriz de competências do candidato, persiste o históric
 [ Schedule Trigger (n8n) ]
                │
                ▼
+
+               
    [ RapidAPI / JSearch (BR) ]
                │
                ▼
+
+               
  [ Normalização & Triagem Inicial ]
                │
                ▼
+
+               
   [ Google Gemini AI (Match Scoring) ]
                │
    ┌───────────┴───────────┐
