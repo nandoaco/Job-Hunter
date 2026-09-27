@@ -88,17 +88,26 @@ export default function App() {
   }, []);
 
   // Métricas calculadas em tempo real estilo SOC KPI
-  const stats = useMemo(() => {
-    const total = vagas.length;
-    const altas = vagas.filter(v => (v.score_match || 0) >= 80).length;
-    const medias = vagas.filter(v => (v.score_match || 0) >= 60 && (v.score_match || 0) < 80).length;
-    const baixas = vagas.filter(v => (v.score_match || 0) < 60).length;
-    const mediaScore = total > 0 ? Math.round(vagas.reduce((acc, cur) => acc + (cur.score_match || 0), 0) / total) : 0;
-    const remotas = vagas.filter(v => (v.modelo_trabalho || '').toLowerCase().includes('remot')).length;
+  const carregarVagas = async () => {
+  setAtualizando(true);
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('vagas')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    return { total, altas, medias, baixas, mediaScore, remotas };
-  }, [vagas]);
-
+      if (!error && data && data.length > 0) {
+        setVagas(data);
+        setVagaSelecionada(data[0]);
+      }
+    }
+  } catch (e) {
+    console.warn('Erro ao carregar do Supabase:', e);
+  } finally {
+    setAtualizando(false);
+  }
+};
   const vagasFiltradas = useMemo(() => {
     return vagas.filter(v => {
       const matchBusca = (v.titulo || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
@@ -132,9 +141,21 @@ export default function App() {
             style={{ backgroundColor: '#141829', border: '1px solid #2d3759', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none', width: '220px' }}
           />
           <button 
-            onClick={carregarVagas}
-            style={{ backgroundColor: '#00e5ff', color: '#0b1120', border: 'none', padding: '7px 14px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
-          >
+  onClick={carregarVagas}
+  disabled={atualizando}
+  style={{ 
+    backgroundColor: atualizando ? '#64748b' : '#00e5ff', 
+    color: '#0b1120', 
+    border: 'none', 
+    padding: '7px 14px', 
+    borderRadius: '6px', 
+    fontWeight: '700', 
+    fontSize: '12px', 
+    cursor: atualizando ? 'not-allowed' : 'pointer' 
+  }}
+>
+  {atualizando ? '↻ CARREGANDO...' : '↻ ATUALIZAR'}
+</button>
             ↻ ATUALIZAR
           </button>
         </div>
