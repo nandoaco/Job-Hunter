@@ -108,10 +108,9 @@ Node.js 18+ instalado
 
 Conta configurada no Supabase
 
-Instalação
-Bash
+```bash
 # 1. Clone o repositório
-git clone [https://github.com/seu-usuario/Job-Hunter.git](https://github.com/seu-usuario/Job-Hunter.git)
+git clone https://github.com/nandoaco/Job-Hunter.git
 
 # 2. Acesse a pasta do projeto
 cd Job-Hunter
@@ -126,6 +125,7 @@ npm install
 
 # 5. Inicie o servidor de desenvolvimento
 npm run dev
+```
 
 Roadmap de Evoluções Futuras
 [x] Triagem automatizada com Gemini e integração n8n
