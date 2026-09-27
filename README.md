@@ -19,11 +19,13 @@ O sistema ingere oportunidades recentes no mercado brasileiro, normaliza os dado
 para confrontar com a matriz de competências do candidato, persiste o histórico analítico e dispara alertas prioritários.
 
 [ Schedule Trigger (n8n) ]
+
                │
                ▼
 
                
    [ RapidAPI / JSearch (BR) ]
+   
                │
                ▼
 
