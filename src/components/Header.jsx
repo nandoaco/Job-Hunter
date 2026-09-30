@@ -1,4 +1,5 @@
 import React from 'react';
+import { tokens } from '../styles/tokens';
 
 export default function Header({ 
   termoBusca, 
@@ -6,52 +7,65 @@ export default function Header({
   carregarVagas, 
   atualizando, 
   modoDemo, 
-  setModoDemo 
+  setModoDemo,
+  abrirBuscaModal 
 }) {
   return (
-    <div className="header-box" style={{ backgroundColor: '#1d2238', padding: '14px 18px', borderRadius: '10px', marginBottom: '16px', border: '1px solid #28304f' }}>
+    <div className="header-box" style={{ backgroundColor: tokens.colors.surface, padding: '14px 18px', borderRadius: tokens.radii.lg, marginBottom: tokens.spacing.lg, border: `1px solid ${tokens.colors.border}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#00e5ff', boxShadow: '0 0 10px #00e5ff' }}></div>
-        <h1 style={{ fontSize: '16px', fontWeight: '700', margin: 0, letterSpacing: '0.5px' }}>
-          JOB HUNTER <span style={{ color: '#00e5ff', fontSize: '12px', fontWeight: '500' }}>• SOC OPERATIONS</span>
+        <div style={{ width: '10px', height: '10px', borderRadius: tokens.radii.full, backgroundColor: tokens.colors.highlight, boxShadow: `0 0 10px ${tokens.colors.highlight}` }}></div>
+        <h1 style={{ fontSize: tokens.typography.sizes.md, fontWeight: tokens.typography.weights.bold, margin: 0, letterSpacing: '0.5px', color: tokens.colors.textPrimary }}>
+          JOB HUNTER <span style={{ color: tokens.colors.textSecondary, fontSize: tokens.typography.sizes.xs, fontWeight: tokens.typography.weights.medium }}>• SOC OPERATIONS</span>
         </h1>
       </div>
 
       <div className="header-controls">
-        {/* Interruptor Modo Demonstração */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: modoDemo ? '#fbbf24' : '#94a3b8', cursor: 'pointer', userSelect: 'none', marginRight: '6px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: tokens.typography.sizes.xs, color: modoDemo ? tokens.colors.yellow : tokens.colors.textSecondary, cursor: 'pointer', userSelect: 'none', marginRight: '6px' }}>
           <input 
             type="checkbox" 
             checked={modoDemo} 
             onChange={(e) => setModoDemo(e.target.checked)}
-            style={{ cursor: 'pointer', accentColor: '#fbbf24' }}
+            style={{ cursor: 'pointer', accentColor: tokens.colors.yellow }}
           />
           <span>Ver demonstração</span>
         </label>
 
-        <input 
-          type="text" 
-          placeholder="Buscar vaga, empresa..." 
-          value={termoBusca}
-          onChange={(e) => setTermoBusca(e.target.value)}
-          className="search-input"
-          style={{ backgroundColor: '#141829', border: '1px solid #2d3759', color: '#fff', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-        />
+        {/* Campo de Busca Rápida com gatilho Ctrl+K */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <input 
+            type="text" 
+            placeholder="Buscar vaga, empresa..." 
+            value={termoBusca}
+            onChange={(e) => setTermoBusca(e.target.value)}
+            className="search-input"
+            style={{ backgroundColor: tokens.colors.background, border: `1px solid ${tokens.colors.border}`, color: tokens.colors.textPrimary, padding: '0 52px 0 12px', height: '36px', borderRadius: tokens.radii.md, fontSize: tokens.typography.sizes.body, outline: 'none' }}
+          />
+          <button
+            onClick={abrirBuscaModal}
+            title="Abrir busca rápida (Ctrl+K)"
+            style={{ position: 'absolute', right: '6px', background: tokens.colors.surfaceAlt, border: `1px solid ${tokens.colors.border}`, color: tokens.colors.textSecondary, padding: '2px 6px', borderRadius: tokens.radii.sm, fontSize: '10px', cursor: 'pointer' }}
+          >
+            Ctrl K
+          </button>
+        </div>
 
         <button 
           onClick={carregarVagas}
           disabled={atualizando || modoDemo}
           title={modoDemo ? 'Desative o modo demonstração para consultar o banco' : 'Atualizar dados'}
+          className="interactive-btn"
           style={{ 
-            backgroundColor: (atualizando || modoDemo) ? '#64748b' : '#00e5ff', 
-            color: '#0b1120', 
-            border: 'none', 
-            padding: '8px 14px', 
-            borderRadius: '6px', 
-            fontWeight: '700', 
-            fontSize: '12px', 
+            backgroundColor: (atualizando || modoDemo) ? tokens.colors.border : tokens.colors.surfaceAlt, 
+            color: (atualizando || modoDemo) ? tokens.colors.textMuted : tokens.colors.textPrimary, 
+            border: `1px solid ${tokens.colors.border}`, 
+            padding: '0 16px', 
+            height: '36px',
+            borderRadius: tokens.radii.md, 
+            fontWeight: tokens.typography.weights.bold, 
+            fontSize: tokens.typography.sizes.xs, 
             cursor: (atualizando || modoDemo) ? 'not-allowed' : 'pointer',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            transition: tokens.transitions.default
           }}
         >
           {atualizando ? '↻ ...' : '↻ ATUALIZAR'}
