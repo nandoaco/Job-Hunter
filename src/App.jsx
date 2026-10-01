@@ -482,15 +482,18 @@ export default function App() {
         }}
       />
 
-      {/* Modal de Login do Dono */}
+      {/* Modal de Login do Dono com Código OTP */}
       <LoginModal
         isOpen={loginModalAberta}
         onClose={() => setLoginModalAberta(false)}
-        onEnviarMagicLink={enviarMagicLink}
+        onEnviarCodigoOtp={enviarCodigoOtp}
+        onVerificarCodigoOtp={verificarCodigoOtp}
         enviando={enviando}
+        aguardandoOtp={aguardandoOtp}
+        setAguardandoOtp={setAguardandoOtp}
         mensagemAuth={mensagemAuth}
         setMensagemAuth={setMensagemAuth}
       />
     </div>
   );
-}
+} 

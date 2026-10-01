@@ -1,15 +1,45 @@
 import React, { useState } from 'react';
 import { tokens } from '../styles/tokens';
 
-export default function LoginModal({ isOpen, onClose, onEnviarMagicLink, enviando, mensagemAuth, setMensagemAuth }) {
+export default function LoginModal({
+  isOpen,
+  onClose,
+  onEnviarCodigoOtp,
+  onVerificarCodigoOtp,
+  enviando,
+  aguardandoOtp,
+  setAguardandoOtp,
+  mensagemAuth,
+  setMensagemAuth
+}) {
   const [email, setEmail] = useState('');
+  const [tokenOtp, setTokenOtp] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e) => {
+  const handleEnviarEmail = async (e) => {
     e.preventDefault();
     if (!email) return;
-    await onEnviarMagicLink(email);
+    await onEnviarCodigoOtp(email);
+  };
+
+  const handleVerificarCodigo = async (e) => {
+    e.preventDefault();
+    if (!tokenOtp) return;
+    const res = await onVerificarCodigoOtp(tokenOtp);
+    if (res?.sucesso) {
+      setTimeout(() => {
+        onClose();
+        setMensagemAuth({ tipo: '', texto: '' });
+        setTokenOtp('');
+      }, 800);
+    }
+  };
+
+  const reiniciarFluxo = () => {
+    setAguardandoOtp(false);
+    setMensagemAuth({ tipo: '', texto: '' });
+    setTokenOtp('');
   };
 
   return (
@@ -54,7 +84,9 @@ export default function LoginModal({ isOpen, onClose, onEnviarMagicLink, enviand
         </div>
 
         <p style={{ margin: '0 0 16px 0', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, lineHeight: 1.5 }}>
-          Insira o seu e-mail de administrador para receber o link de acesso seguro (Magic Link). Novos cadastros estão desativados.
+          {!aguardandoOtp
+            ? 'Insira seu e-mail para receber um código de liberação (Token de 6 dígitos).'
+            : 'Insira o código numérico de 6 dígitos que acabou de chegar no seu e-mail:'}
         </p>
 
         {mensagemAuth?.texto && (
@@ -73,8 +105,8 @@ export default function LoginModal({ isOpen, onClose, onEnviarMagicLink, enviand
           </div>
         )}
 
-        {mensagemAuth?.tipo !== 'sucesso' ? (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {!aguardandoOtp ? (
+          <form onSubmit={handleEnviarEmail} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, marginBottom: '6px' }}>
                 E-mail corporativo:
@@ -115,26 +147,75 @@ export default function LoginModal({ isOpen, onClose, onEnviarMagicLink, enviand
                 marginTop: '4px'
               }}
             >
-              {enviando ? 'Enviando link...' : 'Enviar Link Mágico ✉️'}
+              {enviando ? 'Enviando código...' : 'Receber Código de Acesso 🔑'}
             </button>
           </form>
         ) : (
-          <button
-            onClick={() => { setMensagemAuth({ tipo: '', texto: '' }); onClose(); }}
-            className="interactive-btn"
-            style={{
-              width: '100%',
-              backgroundColor: tokens.colors.surfaceAlt,
-              color: tokens.colors.textPrimary,
-              border: `1px solid ${tokens.colors.border}`,
-              height: '36px',
-              borderRadius: tokens.radii.md,
-              cursor: 'pointer',
-              fontSize: tokens.typography.sizes.xs
-            }}
-          >
-            Fechar Janela
-          </button>
+          <form onSubmit={handleVerificarCodigo} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, marginBottom: '6px' }}>
+                Código Token (6 dígitos):
+              </label>
+              <input
+                type="text"
+                required
+                maxLength={6}
+                placeholder="123456"
+                value={tokenOtp}
+                onChange={(e) => setTokenOtp(e.target.value.replace(/\D/g, ''))}
+                autoFocus
+                style={{
+                  width: '100%',
+                  height: '42px',
+                  backgroundColor: tokens.colors.surfaceAlt,
+                  border: `1px solid ${tokens.colors.highlight}`,
+                  borderRadius: tokens.radii.md,
+                  padding: '0 12px',
+                  color: tokens.colors.highlight,
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  letterSpacing: '8px',
+                  textAlign: 'center',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={enviando || tokenOtp.length < 6}
+              className="interactive-btn"
+              style={{
+                backgroundColor: tokens.colors.green,
+                color: '#ffffff',
+                fontWeight: tokens.typography.weights.bold,
+                border: 'none',
+                height: '38px',
+                borderRadius: tokens.radii.md,
+                cursor: (enviando || tokenOtp.length < 6) ? 'not-allowed' : 'pointer',
+                fontSize: tokens.typography.sizes.xs,
+                marginTop: '4px'
+              }}
+            >
+              {enviando ? 'Validando...' : 'Confirmar e Entrar ✓'}
+            </button>
+
+            <button
+              type="button"
+              onClick={reiniciarFluxo}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: tokens.colors.textMuted,
+                cursor: 'pointer',
+                fontSize: tokens.typography.sizes.xs,
+                marginTop: '4px',
+                textDecoration: 'underline'
+              }}
+            >
+              Voltar e reenviar e-mail
+            </button>
+          </form>
         )}
       </div>
     </div>
