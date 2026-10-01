@@ -160,12 +160,3 @@ export default function LoginModal({
     </div>
   );
 }
-{/* Modal de Login do Dono com Senha */}
-      <LoginModal
-        isOpen={loginModalAberta}
-        onClose={() => setLoginModalAberta(false)}
-        onLoginComSenha={loginComSenha}
-        enviando={enviando}
-        mensagemAuth={mensagemAuth}
-        setMensagemAuth={setMensagemAuth}
-      />
