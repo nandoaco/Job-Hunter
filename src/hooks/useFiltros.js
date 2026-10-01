@@ -2,19 +2,18 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 
 const FILTROS_INICIAIS = {
   texto: '',
-  faixa: 'TODOS', // 'TODOS' | 'ALTO' | 'MEDIO' | 'BAIXO'
+  faixa: 'TODOS',
   scoreMin: 0,
   modelo: 'TODOS',
   fonte: 'TODOS',
   localizacao: 'TODAS',
-  periodo: 'TODOS', // '7' | '14' | '30' | 'TODOS'
-  dataDia: null, // string DD/MM/AAAA para filtro por clique no gráfico
-  status: 'TODAS', // 'TODAS' | 'EM_ANDAMENTO' | 'DISPENSADO' | 'DESCARTADO' | 'NOVA'
-  ordenacao: 'RECENTES' // 'RECENTES' | 'SCORE'
+  periodo: 'TODOS',
+  dataDia: null,
+  status: 'TODAS',
+  ordenacao: 'RECENTES'
 };
 
 export function useFiltros(vagas) {
-  // Lê filtros iniciais a partir da URL
   const lerFiltrosDaUrl = () => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -37,7 +36,6 @@ export function useFiltros(vagas) {
 
   const [filtros, setFiltros] = useState(lerFiltrosDaUrl);
 
-  // Sincroniza estado com a URL sem recarregar a página
   useEffect(() => {
     const params = new URLSearchParams();
     if (filtros.texto) params.set('q', filtros.texto);
@@ -71,7 +69,6 @@ export function useFiltros(vagas) {
     setFiltros(FILTROS_INICIAIS);
   }, []);
 
-  // Extrai valores únicos presentes nos dados atuais
   const opcoesUnicas = useMemo(() => {
     const modelos = new Set();
     const fontes = new Set();
@@ -90,13 +87,11 @@ export function useFiltros(vagas) {
     };
   }, [vagas]);
 
-  // Lista filtrada e ordenada
   const vagasFiltradas = useMemo(() => {
     const agora = Date.now();
 
     return vagas
       .filter((v) => {
-        // Texto
         if (filtros.texto) {
           const termo = filtros.texto.toLowerCase();
           const matchTexto =
@@ -106,38 +101,27 @@ export function useFiltros(vagas) {
           if (!matchTexto) return false;
         }
 
-        // Faixa de match (>=80, 60-79, <60)
         const score = v.score_match || 0;
         if (filtros.faixa === 'ALTO' && score < 80) return false;
         if (filtros.faixa === 'MEDIO' && (score < 60 || score >= 80)) return false;
         if (filtros.faixa === 'BAIXO' && score >= 60) return false;
 
-        // Score Mínimo
         if (score < filtros.scoreMin) return false;
-
-        // Modalidade
         if (filtros.modelo !== 'TODOS' && v.modelo_trabalho !== filtros.modelo) return false;
-
-        // Fonte
         if (filtros.fonte !== 'TODOS' && v.fonte !== filtros.fonte) return false;
-
-        // Localização
         if (filtros.localizacao !== 'TODAS' && v.localizacao !== filtros.localizacao) return false;
 
-        // Status
         if (filtros.status !== 'TODAS') {
           if (filtros.status === 'NOVA' && (v.status_candidatura && v.status_candidatura !== 'NOVA')) return false;
           if (filtros.status !== 'NOVA' && v.status_candidatura !== filtros.status) return false;
         }
 
-        // Período (7, 14, 30 dias baseado em created_at)
         if (filtros.periodo !== 'TODOS' && v.created_at) {
           const diasLimite = Number(filtros.periodo);
           const diffDias = (agora - new Date(v.created_at).getTime()) / 86400000;
           if (diffDias > diasLimite) return false;
         }
 
-        // Filtro específico de data por clique no gráfico (DD/MM/AAAA em America/Sao_Paulo)
         if (filtros.dataDia && v.created_at) {
           const dataVagaSP = new Date(v.created_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
           if (dataVagaSP !== filtros.dataDia) return false;
@@ -149,7 +133,6 @@ export function useFiltros(vagas) {
         if (filtros.ordenacao === 'SCORE') {
           return (b.score_match || 0) - (a.score_match || 0);
         }
-        // Padrão: Mais recentes primeiro
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       });
   }, [vagas, filtros]);
