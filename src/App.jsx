@@ -18,17 +18,7 @@ import LoginModal from './components/LoginModal';
 import ImportadorStatusBanner from './components/ImportadorStatusBanner';
 
 export default function App() {
- const {
-    user,
-    enviando,
-    aguardandoOtp,
-    setAguardandoOtp,
-    mensagemAuth,
-    setMensagemAuth,
-    enviarCodigoOtp,
-    verificarCodigoOtp,
-    logout
-  } = useAuth();
+ const { user, enviando, mensagemAuth, setMensagemAuth, loginComSenha, logout } = useAuth();
 
   const {
     vagas,
