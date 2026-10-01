@@ -1,18 +1,29 @@
 import React from 'react';
 import { tokens } from '../styles/tokens';
 import { renderBadgeStatus, getScoreColors } from '../lib/vagas';
+import { SkeletonFeedTable } from './SkeletonLoader';
 
-export default function FeedTable({ 
-  vagasFiltradas, 
-  vagaSelecionada, 
-  setVagaSelecionada, 
-  filtroNivel, 
-  setFiltroNivel, 
+export default function FeedTable({
+  vagasFiltradas,
+  vagaSelecionada,
+  indiceFocado,
+  aoSelecionarVaga,
+  filtroNivel,
+  setFiltroNivel,
   limparFiltros,
-  loading 
+  loading,
+  linhaRefs
 }) {
   return (
-    <div className="col-8" style={{ backgroundColor: tokens.colors.surface, borderRadius: tokens.radii.lg, padding: tokens.spacing.lg, border: `1px solid ${tokens.colors.border}` }}>
+    <div
+      className="col-12"
+      style={{
+        backgroundColor: tokens.colors.surface,
+        borderRadius: tokens.radii.lg,
+        padding: tokens.spacing.lg,
+        border: `1px solid ${tokens.colors.border}`
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <span style={{ fontSize: tokens.typography.sizes.sm, fontWeight: tokens.typography.weights.bold, color: tokens.colors.textPrimary, textTransform: 'uppercase' }}>
           Feed Operacional ({vagasFiltradas.length})
@@ -47,9 +58,7 @@ export default function FeedTable({
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '36px', color: tokens.colors.highlight, fontSize: tokens.typography.sizes.body }}>
-          ↻ Carregando dados operacionais...
-        </div>
+        <SkeletonFeedTable />
       ) : vagasFiltradas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 16px', color: tokens.colors.textSecondary, fontSize: tokens.typography.sizes.body }}>
           <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔍</div>
@@ -78,7 +87,7 @@ export default function FeedTable({
         </div>
       ) : (
         <>
-          {/* Visual Tabela para Desktop e Tablet */}
+          {/* Tabela de Vagas para Desktop / Tablet */}
           <div className="table-wrapper">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: tokens.typography.sizes.body }}>
               <thead>
@@ -90,28 +99,44 @@ export default function FeedTable({
                 </tr>
               </thead>
               <tbody>
-                {vagasFiltradas.map((v) => {
+                {vagasFiltradas.map((v, index) => {
                   const scoreColors = getScoreColors(v.score_match);
                   const isSelected = vagaSelecionada?.id === v.id;
+                  const isFocused = indiceFocado === index;
+                  // Animação de entrada escalonada nas primeiras 10 linhas
+                  const animDelay = index < 10 ? `${index * 25}ms` : '0ms';
+
                   return (
-                    <tr 
-                      key={v.id} 
-                      onClick={() => setVagaSelecionada(v)}
-                      className="feed-row"
+                    <tr
+                      key={v.id}
+                      ref={(el) => { if (linhaRefs?.current) linhaRefs.current[index] = el; }}
+                      onClick={() => aoSelecionarVaga(v, index)}
+                      className="feed-row row-stagger-entry"
                       tabIndex={0}
                       role="button"
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVagaSelecionada(v); }}
-                      style={{ 
-                        borderBottom: `1px solid ${tokens.colors.border}`, 
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          aoSelecionarVaga(v, index);
+                        }
+                      }}
+                      style={{
+                        borderBottom: `1px solid ${tokens.colors.border}`,
                         cursor: 'pointer',
-                        backgroundColor: isSelected ? 'rgba(0, 229, 255, 0.08)' : 'transparent',
-                        outline: isSelected ? `1px solid ${tokens.colors.highlight}` : 'none',
+                        backgroundColor: isFocused ? 'rgba(0, 229, 255, 0.12)' : isSelected ? 'rgba(0, 229, 255, 0.06)' : 'transparent',
+                        outline: isFocused ? `2px solid ${tokens.colors.highlight}` : 'none',
+                        outlineOffset: '-2px',
+                        animationDelay: animDelay,
                         transition: tokens.transitions.default
                       }}
                     >
                       <td style={{ padding: '12px 10px' }}>
-                        <div style={{ fontWeight: tokens.typography.weights.semibold, color: tokens.colors.textPrimary, fontSize: tokens.typography.sizes.body }}>{v.titulo}</div>
-                        <div style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, marginTop: '2px' }}>{v.empresa} • {v.localizacao}</div>
+                        <div style={{ fontWeight: tokens.typography.weights.semibold, color: tokens.colors.textPrimary, fontSize: tokens.typography.sizes.body }}>
+                          {v.titulo}
+                        </div>
+                        <div style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, marginTop: '2px' }}>
+                          {v.empresa} • {v.localizacao}
+                        </div>
                       </td>
                       <td style={{ padding: '12px 10px' }}>
                         {renderBadgeStatus(v.status_candidatura, v.data_status)}
@@ -130,29 +155,20 @@ export default function FeedTable({
                         </span>
                       </td>
                       <td style={{ padding: '12px 10px', textAlign: 'right' }}>
-                        {v.url_original ? (
-                          <a
-                            href={v.url_original}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="link-action"
-                            style={{
-                              color: tokens.colors.highlight,
-                              textDecoration: 'none',
-                              fontSize: tokens.typography.sizes.xs,
-                              fontWeight: tokens.typography.weights.bold,
-                              padding: '6px 10px',
-                              borderRadius: tokens.radii.sm,
-                              border: `1px solid ${tokens.colors.border}`,
-                              display: 'inline-block'
-                            }}
-                          >
-                            Abrir ↗
-                          </a>
-                        ) : (
-                          <span style={{ color: tokens.colors.textMuted, fontSize: tokens.typography.sizes.xs }}>Sem link</span>
-                        )}
+                        <span
+                          className="link-action"
+                          style={{
+                            color: tokens.colors.highlight,
+                            fontSize: tokens.typography.sizes.xs,
+                            fontWeight: tokens.typography.weights.bold,
+                            padding: '6px 10px',
+                            borderRadius: tokens.radii.sm,
+                            border: `1px solid ${tokens.colors.border}`,
+                            display: 'inline-block'
+                          }}
+                        >
+                          Ver Detalhes →
+                        </span>
                       </td>
                     </tr>
                   );
@@ -161,21 +177,22 @@ export default function FeedTable({
             </table>
           </div>
 
-          {/* Visual em Lista de Cards para Celular */}
+          {/* Versão em Lista de Cartões para Mobile */}
           <div className="mobile-feed-cards">
-            {vagasFiltradas.map((v) => {
+            {vagasFiltradas.map((v, index) => {
               const scoreColors = getScoreColors(v.score_match);
               const isSelected = vagaSelecionada?.id === v.id;
+              const isFocused = indiceFocado === index;
+
               return (
                 <div
                   key={v.id}
-                  onClick={() => setVagaSelecionada(v)}
+                  onClick={() => aoSelecionarVaga(v, index)}
                   tabIndex={0}
                   role="button"
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVagaSelecionada(v); }}
                   style={{
-                    backgroundColor: isSelected ? 'rgba(0, 229, 255, 0.08)' : tokens.colors.surfaceAlt,
-                    border: `1px solid ${isSelected ? tokens.colors.highlight : tokens.colors.border}`,
+                    backgroundColor: isFocused ? 'rgba(0, 229, 255, 0.12)' : isSelected ? 'rgba(0, 229, 255, 0.06)' : tokens.colors.surfaceAlt,
+                    border: `1px solid ${isFocused ? tokens.colors.highlight : tokens.colors.border}`,
                     borderRadius: tokens.radii.md,
                     padding: '12px',
                     marginBottom: '8px',
@@ -203,21 +220,24 @@ export default function FeedTable({
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {renderBadgeStatus(v.status_candidatura, v.data_status)}
-                    {v.url_original && (
-                      <a
-                        href={v.url_original}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ color: tokens.colors.highlight, fontSize: tokens.typography.sizes.xs, fontWeight: tokens.typography.weights.bold, textDecoration: 'none' }}
-                      >
-                        Abrir ↗
-                      </a>
-                    )}
+                    <span style={{ color: tokens.colors.highlight, fontSize: tokens.typography.sizes.xs, fontWeight: tokens.typography.weights.bold }}>
+                      Detalhes →
+                    </span>
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* Dica discreta de atalhos de teclado no rodapé do feed */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: `1px solid ${tokens.colors.border}`, fontSize: tokens.typography.sizes.xs, color: tokens.colors.textMuted, gap: '12px', flexWrap: 'wrap' }}>
+            <span><kbd className="kbd-hint">↑</kbd><kbd className="kbd-hint">↓</kbd> ou <kbd className="kbd-hint">j</kbd><kbd className="kbd-hint">k</kbd> navegar</span>
+            <span>·</span>
+            <span><kbd className="kbd-hint">Enter</kbd> abrir</span>
+            <span>·</span>
+            <span><kbd className="kbd-hint">Esc</kbd> fechar</span>
+            <span>·</span>
+            <span><kbd className="kbd-hint">Ctrl+K</kbd> buscar</span>
           </div>
         </>
       )}

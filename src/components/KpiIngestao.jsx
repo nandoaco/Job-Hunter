@@ -1,11 +1,18 @@
 import React, { useMemo } from 'react';
 import { tokens } from '../styles/tokens';
 import { calcularIngestao14Dias, formatarTempoRelativo, formatarHoraSP } from '../lib/vagas';
+import { useAnimatedCounter } from '../hooks/useAnimatedCounter';
+import { SkeletonCard } from './SkeletonLoader';
 
-export default function KpiIngestao({ total, vagas, ultimaVagaCreatedAt, ultimaAtualizacao, diaAtivo, alternarDia }) {
+export default function KpiIngestao({ total, vagas, ultimaVagaCreatedAt, ultimaAtualizacao, diaAtivo, alternarDia, loading }) {
+  const totalAnimado = useAnimatedCounter(total, 600);
   const dados14Dias = useMemo(() => calcularIngestao14Dias(vagas), [vagas]);
   const tempoRelativo = useMemo(() => formatarTempoRelativo(ultimaVagaCreatedAt), [ultimaVagaCreatedAt]);
   const horaAtualizado = useMemo(() => formatarHoraSP(ultimaAtualizacao), [ultimaAtualizacao]);
+
+  if (loading) {
+    return <div className="col-5"><SkeletonCard height="180px" /></div>;
+  }
 
   return (
     <div className="col-5" style={{ backgroundColor: tokens.colors.surface, borderRadius: tokens.radii.lg, padding: tokens.spacing.lg, border: `1px solid ${tokens.colors.border}` }}>
@@ -20,14 +27,14 @@ export default function KpiIngestao({ total, vagas, ultimaVagaCreatedAt, ultimaA
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
         <div style={{ fontSize: tokens.typography.sizes.kpi, fontWeight: tokens.typography.weights.extraBold, color: tokens.colors.textPrimary }}>
-          {total}
+          {totalAnimado}
         </div>
         <span style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary }}>
           • Última vaga: <strong style={{ color: tokens.colors.textPrimary }}>{tempoRelativo}</strong>
         </span>
       </div>
       
-      {/* Gráfico Real: Últimos 14 Dias (Clicável) */}
+      {/* Gráfico Real com barras crescendo suavemente */}
       <div style={{ marginTop: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, textTransform: 'uppercase', fontWeight: tokens.typography.weights.semibold }}>
@@ -47,7 +54,7 @@ export default function KpiIngestao({ total, vagas, ultimaVagaCreatedAt, ultimaA
                 key={i} 
                 onClick={() => alternarDia(d.dataKey)}
                 title={`${d.dataKey}: ${d.total} vaga(s) - Clique para filtrar`}
-                className="chart-bar"
+                className="chart-bar bar-grow-anim"
                 style={{ 
                   flex: 1, 
                   backgroundColor: isSelected ? tokens.colors.highlight : d.total > 0 ? tokens.colors.blue : tokens.colors.surfaceAlt, 
@@ -55,7 +62,7 @@ export default function KpiIngestao({ total, vagas, ultimaVagaCreatedAt, ultimaA
                   borderRadius: `${tokens.radii.sm} ${tokens.radii.sm} 0 0`,
                   border: isSelected ? `1px solid #fff` : 'none',
                   cursor: 'pointer',
-                  transition: tokens.transitions.default
+                  transition: 'height 500ms ease, background-color 150ms ease'
                 }}
               ></div>
             );

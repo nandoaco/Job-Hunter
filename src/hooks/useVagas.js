@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { DEMO_VAGAS } from '../data/demoVagas';
-import { useStatusLocal } from './useStatusLocal';
+import { useStatusVagas } from './useStatusVagas';
 
-export function useVagas() {
+export function useVagas(user) {
   const [vagasReais, setVagasReais] = useState([]);
   const [loading, setLoading] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
@@ -12,7 +12,8 @@ export function useVagas() {
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
   const [vagaSelecionadaId, setVagaSelecionadaId] = useState(null);
 
-  const { getHistoricoLocal, salvarHistoricoLocal } = useStatusLocal();
+  // Hook unificado de status (Supabase para utilizador autenticado, localStorage para visitante)
+  const { mapaStatus, atualizarStatus, recarregarStatus, erroSincronizacao } = useStatusVagas(user);
 
   const carregarVagas = useCallback(async () => {
     setAtualizando(true);
@@ -48,20 +49,20 @@ export function useVagas() {
     carregarVagas();
   }, [carregarVagas]);
 
+  // Vagas combinadas com o status correspondente
   const vagas = useMemo(() => {
     const base = modoDemo ? DEMO_VAGAS : vagasReais;
-    const historico = getHistoricoLocal();
 
     return base.map((v) => {
-      const infoLocal = historico[v.id] || {};
+      const infoStatus = mapaStatus[v.id] || {};
       return {
         ...v,
-        status_candidatura: infoLocal.status || v.status_candidatura || 'NOVA',
-        data_status: infoLocal.data || v.data_status || null,
-        andamento_obs: infoLocal.obs || v.andamento_obs || ''
+        status_candidatura: infoStatus.status || v.status_candidatura || 'NOVA',
+        data_status: infoStatus.data || v.data_status || null,
+        andamento_obs: infoStatus.obs || v.andamento_obs || ''
       };
     });
-  }, [modoDemo, vagasReais, getHistoricoLocal]);
+  }, [modoDemo, vagasReais, mapaStatus]);
 
   const vagaSelecionada = useMemo(() => {
     if (vagas.length === 0) return null;
@@ -70,22 +71,8 @@ export function useVagas() {
   }, [vagas, vagaSelecionadaId]);
 
   const alterarStatusVaga = useCallback((vagaId, novoStatus, obs = '') => {
-    const agora = new Date().toLocaleString('pt-BR');
-    const historico = getHistoricoLocal();
-    historico[vagaId] = {
-      status: novoStatus,
-      data: agora,
-      obs: obs
-    };
-    salvarHistoricoLocal(historico);
-
-    if (modoDemo) {
-      setModoDemo((prev) => !prev);
-      setTimeout(() => setModoDemo(true), 0);
-    } else {
-      setVagasReais((prev) => [...prev]);
-    }
-  }, [getHistoricoLocal, salvarHistoricoLocal, modoDemo]);
+    atualizarStatus(vagaId, novoStatus, obs);
+  }, [atualizarStatus]);
 
   const ultimaVagaCreatedAt = useMemo(() => {
     if (!vagas || vagas.length === 0) return null;
@@ -100,6 +87,7 @@ export function useVagas() {
     loading,
     atualizando,
     erro,
+    erroSincronizacao,
     modoDemo,
     setModoDemo,
     ultimaAtualizacao,
@@ -107,6 +95,7 @@ export function useVagas() {
     vagaSelecionada,
     setVagaSelecionada: (v) => setVagaSelecionadaId(v?.id || null),
     carregarVagas,
-    alterarStatusVaga
+    alterarStatusVaga,
+    recarregarStatus
   };
 }
