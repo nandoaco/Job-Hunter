@@ -1,134 +1,174 @@
 import React from 'react';
+import { tokens } from '../styles/tokens';
 
-// Cores e estilos dinâmicos de acordo com a pontuação de match
+// Validação estrita se um score é numérico válido (0 é válido)
+export function temScoreValido(score) {
+  if (score === null || score === undefined || score === '') return false;
+  const num = Number(score);
+  return !Number.isNaN(num);
+}
+
+export function formatarScore(score) {
+  if (!temScoreValido(score)) return '—';
+  return `${Math.round(Number(score))}%`;
+}
+
 export function getScoreColors(score) {
-  const valor = Number(score) || 0;
-  if (valor >= 80) {
+  if (!temScoreValido(score)) {
     return {
-      bg: 'rgba(16, 185, 129, 0.15)',
-      color: '#10b981',
-      border: '#10b981'
+      bg: 'rgba(148, 163, 184, 0.12)',
+      color: tokens.colors.textMuted,
+      border: 'rgba(148, 163, 184, 0.3)'
     };
   }
-  if (valor >= 60) {
+
+  const num = Number(score);
+  if (num >= 80) {
+    return {
+      bg: 'rgba(16, 185, 129, 0.15)',
+      color: tokens.colors.green,
+      border: 'rgba(16, 185, 129, 0.4)'
+    };
+  }
+  if (num >= 60) {
     return {
       bg: 'rgba(245, 158, 11, 0.15)',
-      color: '#f59e0b',
-      border: '#f59e0b'
+      color: tokens.colors.yellow,
+      border: 'rgba(245, 158, 11, 0.4)'
     };
   }
   return {
     bg: 'rgba(244, 63, 94, 0.15)',
-    color: '#f43f5e',
-    border: '#f43f5e'
+    color: tokens.colors.red,
+    border: 'rgba(244, 63, 94, 0.4)'
   };
 }
 
-// Emblema visual de status da vaga
-export function renderBadgeStatus(status, data) {
-  switch (status) {
-    case 'EM_ANDAMENTO':
-      return (
-        <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          ⏳ Em Andamento {data ? `(${data})` : ''}
-        </span>
-      );
-    case 'DISPENSADO':
-      return (
-        <span style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', border: '1px solid #f43f5e', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          ✕ Dispensado {data ? `(${data})` : ''}
-        </span>
-      );
-    case 'DESCARTADO':
-      return (
-        <span style={{ backgroundColor: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', border: '1px solid #94a3b8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          🗑️ Descartada {data ? `(${data})` : ''}
-        </span>
-      );
-    default:
-      return (
-        <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid #10b981', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          • Nova Oportunidade
-        </span>
-      );
+export function renderBadgeStatus(status, dataStatus) {
+  const st = (status || 'NOVA').toUpperCase();
+
+  let bg = 'rgba(0, 229, 255, 0.12)';
+  let color = tokens.colors.highlight;
+  let border = 'rgba(0, 229, 255, 0.3)';
+  let texto = '• Nova';
+
+  if (st === 'EM_ANDAMENTO') {
+    bg = 'rgba(56, 189, 248, 0.15)';
+    color = tokens.colors.blue;
+    border = 'rgba(56, 189, 248, 0.4)';
+    texto = '⏳ Candidatado';
+  } else if (st === 'ENTREVISTA') {
+    bg = 'rgba(168, 85, 247, 0.15)';
+    color = '#c084fc';
+    border = 'rgba(168, 85, 247, 0.4)';
+    texto = '🎙️ Entrevista';
+  } else if (st === 'PROPOSTA') {
+    bg = 'rgba(52, 211, 153, 0.2)';
+    color = '#34d399';
+    border = 'rgba(52, 211, 153, 0.5)';
+    texto = '💼 Proposta';
+  } else if (st === 'DISPENSADO') {
+    bg = 'rgba(244, 63, 94, 0.15)';
+    color = tokens.colors.red;
+    border = 'rgba(244, 63, 94, 0.4)';
+    texto = '✕ Dispensado';
+  } else if (st === 'DESCARTADO') {
+    bg = 'rgba(148, 163, 184, 0.12)';
+    color = tokens.colors.textSecondary;
+    border = 'rgba(148, 163, 184, 0.3)';
+    texto = '🗑️ Descartada';
   }
+
+  return (
+    <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px' }}>
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          backgroundColor: bg,
+          color: color,
+          border: `1px solid ${border}`,
+          borderRadius: tokens.radii.sm,
+          padding: '2px 8px',
+          fontSize: tokens.typography.sizes.xs,
+          fontWeight: tokens.typography.weights.semibold,
+          width: 'fit-content'
+        }}
+      >
+        {texto}
+      </span>
+      {dataStatus && (
+        <span style={{ fontSize: '10px', color: tokens.colors.textMuted }}>
+          {dataStatus}
+        </span>
+      )}
+    </div>
+  );
 }
 
-// Cálculo estatístico agregado para os cartões de topo
 export function calcularEstatisticas(vagas = []) {
-  const total = vagas.length;
-  if (total === 0) {
-    return {
-      total: 0,
-      altas: 0,
-      medias: 0,
-      baixas: 0,
-      mediaScore: 0,
-      novas: 0,
-      emAndamento: 0,
-      dispensadas: 0,
-      descartadas: 0
-    };
-  }
+  const stats = {
+    total: vagas.length,
+    novas: 0,
+    emAndamento: 0,
+    dispensadas: 0,
+    descartadas: 0,
+    altas: 0,
+    medias: 0,
+    baixas: 0,
+    totalComScore: 0,
+    mediaScore: null
+  };
 
-  let somaScore = 0;
-  let altas = 0;
-  let medias = 0;
-  let baixas = 0;
-
-  let novas = 0;
-  let emAndamento = 0;
-  let dispensadas = 0;
-  let descartadas = 0;
+  let somaScores = 0;
 
   vagas.forEach((v) => {
-    const score = Number(v.score_match) || 0;
-    somaScore += score;
+    const st = (v.status_candidatura || 'NOVA').toUpperCase();
+    if (st === 'EM_ANDAMENTO') stats.emAndamento++;
+    else if (st === 'DISPENSADO') stats.dispensadas++;
+    else if (st === 'DESCARTADO') stats.descartadas++;
+    else stats.novas++;
 
-    if (score >= 80) altas++;
-    else if (score >= 60) medias++;
-    else baixas++;
+    if (temScoreValido(v.score_match)) {
+      const scoreNum = Number(v.score_match);
+      stats.totalComScore++;
+      somaScores += scoreNum;
 
-    const st = v.status_candidatura;
-    if (st === 'EM_ANDAMENTO') emAndamento++;
-    else if (st === 'DISPENSADO') dispensadas++;
-    else if (st === 'DESCARTADO') descartadas++;
-    else novas++;
+      if (scoreNum >= 80) stats.altas++;
+      else if (scoreNum >= 60) stats.medias++;
+      else stats.baixas++;
+    }
   });
 
-  return {
-    total,
-    altas,
-    medias,
-    baixas,
-    mediaScore: Math.round(somaScore / total),
-    novas,
-    emAndamento,
-    dispensadas,
-    descartadas
-  };
+  if (stats.totalComScore > 0) {
+    stats.mediaScore = Math.round(somaScores / stats.totalComScore);
+  }
+
+  return stats;
 }
 
-// Histórico de ingestão dos últimos 14 dias (Fuso de São Paulo)
 export function calcularIngestao14Dias(vagas = []) {
-  const dias = [];
   const hoje = new Date();
+  const dias = [];
 
   for (let i = 13; i >= 0; i--) {
     const d = new Date(hoje);
-    d.setDate(d.getDate() - i);
-    const dataKey = d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    d.setDate(hoje.getDate() - i);
+    const dataKey = d.toISOString().slice(0, 10);
     const rotulo = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
     dias.push({ dataKey, rotulo, total: 0 });
   }
 
+  const mapa = {};
+  dias.forEach((item) => {
+    mapa[item.dataKey] = item;
+  });
+
   vagas.forEach((v) => {
-    if (v.created_at) {
-      const dataVaga = new Date(v.created_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-      const item = dias.find((d) => d.dataKey === dataVaga);
-      if (item) {
-        item.total++;
-      }
+    if (!v.created_at) return;
+    const diaVaga = v.created_at.slice(0, 10);
+    if (mapa[diaVaga]) {
+      mapa[diaVaga].total += 1;
     }
   });
 
@@ -139,23 +179,23 @@ export function calcularIngestao14Dias(vagas = []) {
   }));
 }
 
-// Formatador de tempo relativo
-export function formatarTempoRelativo(dataIso) {
-  if (!dataIso) return 'Sem registos';
+export function formatarTempoRelativo(isoDate) {
+  if (!isoDate) return 'Sem registos';
   const agora = Date.now();
-  const diffMin = Math.floor((agora - new Date(dataIso).getTime()) / 60000);
+  const data = new Date(isoDate).getTime();
+  const diffSegundos = Math.max(0, Math.floor((agora - data) / 1000));
 
-  if (diffMin < 1) return 'Agora mesmo';
-  if (diffMin < 60) return `Há ${diffMin} min`;
-  const diffHoras = Math.floor(diffMin / 60);
-  if (diffHoras < 24) return `Há ${diffHoras}h`;
+  if (diffSegundos < 60) return `${diffSegundos}s atrás`;
+  const diffMinutos = Math.floor(diffSegundos / 60);
+  if (diffMinutos < 60) return `${diffMinutos}m atrás`;
+  const diffHoras = Math.floor(diffMinutos / 60);
+  if (diffHoras < 24) return `${diffHoras}h atrás`;
   const diffDias = Math.floor(diffHoras / 24);
-  return `Há ${diffDias}d`;
+  return `${diffDias}d atrás`;
 }
 
-// Formatador de hora em São Paulo
 export function formatarHoraSP(timestamp) {
-  if (!timestamp) return '';
+  if (!timestamp) return '--:--';
   return new Date(timestamp).toLocaleTimeString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     hour: '2-digit',

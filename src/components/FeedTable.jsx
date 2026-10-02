@@ -1,6 +1,6 @@
 import React from 'react';
 import { tokens } from '../styles/tokens';
-import { renderBadgeStatus, getScoreColors } from '../lib/vagas';
+import { renderBadgeStatus, getScoreColors, formatarScore } from '../lib/vagas';
 import { SkeletonFeedTable } from './SkeletonLoader';
 
 export default function FeedTable({
@@ -87,7 +87,6 @@ export default function FeedTable({
         </div>
       ) : (
         <>
-          {/* Tabela de Vagas para Desktop / Tablet */}
           <div className="table-wrapper">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: tokens.typography.sizes.body }}>
               <thead>
@@ -103,7 +102,6 @@ export default function FeedTable({
                   const scoreColors = getScoreColors(v.score_match);
                   const isSelected = vagaSelecionada?.id === v.id;
                   const isFocused = indiceFocado === index;
-                  // Animação de entrada escalonada nas primeiras 10 linhas
                   const animDelay = index < 10 ? `${index * 25}ms` : '0ms';
 
                   return (
@@ -151,7 +149,7 @@ export default function FeedTable({
                           color: scoreColors.color,
                           border: `1px solid ${scoreColors.border}`
                         }}>
-                          {v.score_match}%
+                          {formatarScore(v.score_match)}
                         </span>
                       </td>
                       <td style={{ padding: '12px 10px', textAlign: 'right' }}>
@@ -177,7 +175,6 @@ export default function FeedTable({
             </table>
           </div>
 
-          {/* Versão em Lista de Cartões para Mobile */}
           <div className="mobile-feed-cards">
             {vagasFiltradas.map((v, index) => {
               const scoreColors = getScoreColors(v.score_match);
@@ -212,7 +209,7 @@ export default function FeedTable({
                       color: scoreColors.color,
                       border: `1px solid ${scoreColors.border}`
                     }}>
-                      {v.score_match}%
+                      {formatarScore(v.score_match)}
                     </span>
                   </div>
                   <div style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, marginBottom: '8px' }}>
@@ -229,7 +226,6 @@ export default function FeedTable({
             })}
           </div>
 
-          {/* Dica discreta de atalhos de teclado no rodapé do feed */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: `1px solid ${tokens.colors.border}`, fontSize: tokens.typography.sizes.xs, color: tokens.colors.textMuted, gap: '12px', flexWrap: 'wrap' }}>
             <span><kbd className="kbd-hint">↑</kbd><kbd className="kbd-hint">↓</kbd> ou <kbd className="kbd-hint">j</kbd><kbd className="kbd-hint">k</kbd> navegar</span>
             <span>·</span>

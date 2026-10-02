@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { tokens } from '../styles/tokens';
-import { renderBadgeStatus } from '../lib/vagas';
+import { renderBadgeStatus, formatarScore, getScoreColors } from '../lib/vagas';
 
 export default function DetailPanel({
   vagaSelecionada,
@@ -16,7 +16,6 @@ export default function DetailPanel({
   const gavetaRef = useRef(null);
   const botaoFecharRef = useRef(null);
 
-  // Gestão de foco e acessibilidade ao abrir e fechar a gaveta
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -27,7 +26,6 @@ export default function DetailPanel({
     }
   }, [isOpen, origemFocoRef]);
 
-  // Teclado na gaveta: Esc fecha, ← / → navegam entre vagas
   useEffect(() => {
     if (!isOpen) return;
 
@@ -50,9 +48,15 @@ export default function DetailPanel({
 
   if (!isOpen || !vagaSelecionada) return null;
 
+  const scoreLabel = formatarScore(vagaSelecionada.score_match);
+  const scoreColors = getScoreColors(vagaSelecionada.score_match);
+
+  const temPontosFortes = Array.isArray(vagaSelecionada.pontos_fortes) && vagaSelecionada.pontos_fortes.length > 0;
+  const temGaps = Array.isArray(vagaSelecionada.gaps) && vagaSelecionada.gaps.length > 0;
+  const temParecer = Boolean(vagaSelecionada.parecer_ia && vagaSelecionada.parecer_ia.trim());
+
   return (
     <>
-      {/* Fundo escurecido com transição de opacidade */}
       <div
         className="drawer-overlay"
         onClick={onClose}
@@ -65,7 +69,6 @@ export default function DetailPanel({
         }}
       />
 
-      {/* Gaveta lateral deslizante */}
       <div
         ref={gavetaRef}
         role="dialog"
@@ -89,7 +92,7 @@ export default function DetailPanel({
           padding: '24px'
         }}
       >
-        {/* Cabeçalho da Gaveta com Navegação e Botão Fechar */}
+        {/* Cabeçalho da Gaveta */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: `1px solid ${tokens.colors.border}`, paddingBottom: '12px' }}>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <button
@@ -152,8 +155,8 @@ export default function DetailPanel({
           </button>
         </div>
 
-        {/* Título e Empresa */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+        {/* Título, Empresa e Selo de Score */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '12px' }}>
           <div>
             <span style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               {vagaSelecionada.empresa}
@@ -162,8 +165,19 @@ export default function DetailPanel({
               {vagaSelecionada.titulo}
             </h2>
           </div>
-          <span style={{ fontSize: tokens.typography.sizes.xl, fontWeight: tokens.typography.weights.extraBold, color: tokens.colors.highlight }}>
-            {vagaSelecionada.score_match}%
+          <span
+            style={{
+              fontSize: tokens.typography.sizes.lg,
+              fontWeight: tokens.typography.weights.extraBold,
+              color: scoreColors.color,
+              backgroundColor: scoreColors.bg,
+              border: `1px solid ${scoreColors.border}`,
+              padding: '2px 10px',
+              borderRadius: tokens.radii.sm,
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {scoreLabel}
           </span>
         </div>
 
@@ -175,7 +189,7 @@ export default function DetailPanel({
           {renderBadgeStatus(vagaSelecionada.status_candidatura, vagaSelecionada.data_status)}
         </div>
 
-        {/* Botões de Ação de Situação */}
+        {/* Botões de Situação */}
         <div style={{ marginBottom: '20px' }}>
           <span style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, textTransform: 'uppercase', fontWeight: tokens.typography.weights.bold, display: 'block', marginBottom: '8px' }}>
             Atualizar Situação:
@@ -237,36 +251,47 @@ export default function DetailPanel({
           <span style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.highlight, fontWeight: tokens.typography.weights.bold, textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
             Parecer Técnico da IA
           </span>
-          <p style={{ margin: 0, fontSize: tokens.typography.sizes.body, color: tokens.colors.textPrimary, fontStyle: 'italic', lineHeight: 1.5 }}>
-            "{vagaSelecionada.parecer_ia || 'Vaga com requisitos analisados pelo fluxo automatizado de triagem de segurança.'}"
-          </p>
+          {temParecer ? (
+            <p style={{ margin: 0, fontSize: tokens.typography.sizes.body, color: tokens.colors.textPrimary, fontStyle: 'italic', lineHeight: 1.5 }}>
+              "{vagaSelecionada.parecer_ia}"
+            </p>
+          ) : (
+            <p style={{ margin: 0, fontSize: tokens.typography.sizes.xs, color: tokens.colors.textMuted, fontStyle: 'italic' }}>
+              Análise ainda não disponível
+            </p>
+          )}
         </div>
 
-        {/* Pontos Fortes e Gaps */}
+        {/* Pontos Fortes */}
         <div style={{ marginBottom: '20px' }}>
           <span style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.green, fontWeight: tokens.typography.weights.bold, textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
             Pontos de Aderência:
           </span>
-          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textPrimary, lineHeight: 1.6 }}>
-            {Array.isArray(vagaSelecionada.pontos_fortes) && vagaSelecionada.pontos_fortes.length > 0 ? (
-              vagaSelecionada.pontos_fortes.map((ponto, i) => <li key={i}>{ponto}</li>)
-            ) : (
-              <li>Compatibilidade com as competências de operação SOC e análise Blue Team</li>
-            )}
-          </ul>
+          {temPontosFortes ? (
+            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textPrimary, lineHeight: 1.6 }}>
+              {vagaSelecionada.pontos_fortes.map((ponto, i) => <li key={i}>{ponto}</li>)}
+            </ul>
+          ) : (
+            <div style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textMuted, fontStyle: 'italic' }}>
+              Análise ainda não disponível
+            </div>
+          )}
         </div>
 
+        {/* Gaps */}
         <div style={{ marginBottom: '24px' }}>
           <span style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.red, fontWeight: tokens.typography.weights.bold, textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
             Gaps / Atenção:
           </span>
-          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textPrimary, lineHeight: 1.6 }}>
-            {Array.isArray(vagaSelecionada.gaps) && vagaSelecionada.gaps.length > 0 ? (
-              vagaSelecionada.gaps.map((gap, i) => <li key={i}>{gap}</li>)
-            ) : (
-              <li>Nenhum gap bloqueante identificado na triagem técnica</li>
-            )}
-          </ul>
+          {temGaps ? (
+            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textPrimary, lineHeight: 1.6 }}>
+              {vagaSelecionada.gaps.map((gap, i) => <li key={i}>{gap}</li>)}
+            </ul>
+          ) : (
+            <div style={{ fontSize: tokens.typography.sizes.xs, color: tokens.colors.textMuted, fontStyle: 'italic' }}>
+              Análise ainda não disponível
+            </div>
+          )}
         </div>
 
         {/* Botão de Candidatura */}
@@ -305,7 +330,7 @@ export default function DetailPanel({
                 cursor: 'not-allowed'
               }}
             >
-              Link de inscrição indisponível
+              Link de candidatura indisponível
             </button>
           )}
         </div>

@@ -6,9 +6,7 @@ import { useFiltros } from './hooks/useFiltros';
 import { calcularEstatisticas } from './lib/vagas';
 import Header from './components/Header';
 import KpiIngestao from './components/KpiIngestao';
-import AderenciaCard from './components/AderenciaCard';
-import MediaFit from './components/MediaFit';
-import StatusFunil from './components/StatusFunil';
+import IndicadoresCarrossel from './components/IndicadoresCarrossel';
 import FiltrosBar from './components/FiltrosBar';
 import FeedTable from './components/FeedTable';
 import DetailPanel from './components/DetailPanel';
@@ -18,7 +16,7 @@ import LoginModal from './components/LoginModal';
 import ImportadorStatusBanner from './components/ImportadorStatusBanner';
 
 export default function App() {
- const { user, enviando, mensagemAuth, setMensagemAuth, loginComSenha, logout } = useAuth();
+  const { user, enviando, mensagemAuth, setMensagemAuth, loginComSenha, logout } = useAuth();
 
   const {
     vagas,
@@ -55,7 +53,6 @@ export default function App() {
     limparTodosFiltros
   } = useFiltros(vagas);
 
-  // Abrir a gaveta ao clicar ou pressionar Enter numa vaga
   const abrirGavetaComVaga = useCallback((vaga, index) => {
     setVagaSelecionada(vaga);
     setIndiceFocado(index);
@@ -67,7 +64,6 @@ export default function App() {
     setGavetaAberta(false);
   }, []);
 
-  // Navegação dentro da gaveta (← / →)
   const vagaAtualIndex = useMemo(() => {
     if (!vagaSelecionada) return -1;
     return vagasFiltradas.findIndex((v) => v.id === vagaSelecionada.id);
@@ -92,7 +88,6 @@ export default function App() {
     }
   }, [temSeguinte, vagaAtualIndex, vagasFiltradas, setVagaSelecionada]);
 
-  // Gestão de Atalhos Globais no Feed (↑/↓ e j/k)
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -137,7 +132,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [buscaModalAberta, loginModalAberta, gavetaAberta, vagasFiltradas, indiceFocado, abrirGavetaComVaga]);
 
-  // Estatísticas agregadas calculadas sobre o total geral
   const statsGerais = useMemo(() => calcularEstatisticas(vagas), [vagas]);
 
   return (
@@ -153,9 +147,6 @@ export default function App() {
         }
 
         .col-12 { grid-column: span 12; }
-        .col-5 { grid-column: span 5; }
-        .col-4 { grid-column: span 4; }
-        .col-3 { grid-column: span 3; }
 
         .header-box {
           display: flex;
@@ -236,12 +227,9 @@ export default function App() {
         .interactive-btn:hover {
           filter: brightness(1.15);
         }
-        .interactive-btn:focus-visible, .funil-item:focus-visible, .feed-row:focus-visible {
+        .interactive-btn:focus-visible, .feed-row:focus-visible {
           outline: 2px solid ${tokens.colors.highlight} !important;
           outline-offset: 2px;
-        }
-        .funil-item:hover {
-          border-color: ${tokens.colors.borderLight} !important;
         }
         .feed-row:hover {
           background-color: rgba(255, 255, 255, 0.04) !important;
@@ -264,16 +252,7 @@ export default function App() {
           }
         }
 
-        @media (max-width: 1024px) {
-          .col-5 { grid-column: span 12 !important; }
-          .col-4 { grid-column: span 6 !important; }
-          .col-3 { grid-column: span 6 !important; }
-        }
-
         @media (max-width: 768px) {
-          .col-5, .col-4, .col-3, .col-12 {
-            grid-column: span 12 !important;
-          }
           .header-box {
             flex-direction: column;
             align-items: stretch !important;
@@ -298,7 +277,6 @@ export default function App() {
         }
       `}</style>
 
-      {/* Faixa Superior Informativa: Modo Demo, Erro de Sync ou Aviso de Visitante */}
       {modoDemo && (
         <div style={{
           backgroundColor: '#92400e',
@@ -355,7 +333,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Banner de Importação para a Nuvem (Dono Logado) */}
       <ImportadorStatusBanner
         user={user}
         vagas={vagas}
@@ -393,43 +370,28 @@ export default function App() {
         </div>
       ) : (
         <div className="grid-dashboard">
-          {/* Topo: KPIs Operacionais */}
-          <KpiIngestao 
-            total={statsGerais.total} 
-            vagas={vagas}
-            ultimaVagaCreatedAt={ultimaVagaCreatedAt}
-            ultimaAtualizacao={ultimaAtualizacao}
-            diaAtivo={filtros.dataDia}
-            alternarDia={(dia) => alternarFiltro('dataDia', dia)}
-            loading={loading}
-          />
-          
-          <AderenciaCard 
-            total={statsGerais.total}
-            altas={statsGerais.altas}
-            medias={statsGerais.medias}
-            baixas={statsGerais.baixas}
-            faixaAtiva={filtros.faixa}
-            alternarFaixa={(faixa) => alternarFiltro('faixa', faixa)}
-            loading={loading}
+          {/* Card do Gráfico de Ingestão Diária mantido intacto */}
+          <div className="col-12">
+            <KpiIngestao 
+              total={statsGerais.total} 
+              vagas={vagas}
+              ultimaVagaCreatedAt={ultimaVagaCreatedAt}
+              ultimaAtualizacao={ultimaAtualizacao}
+              diaAtivo={filtros.dataDia}
+              alternarDia={(dia) => alternarFiltro('dataDia', dia)}
+              loading={loading}
+            />
+          </div>
+
+          {/* Componente Único de Indicadores em Carrossel */}
+          <IndicadoresCarrossel 
+            stats={statsGerais}
+            filtros={filtros}
+            alternarFiltro={alternarFiltro}
+            limparTodosFiltros={limparTodosFiltros}
           />
 
-          <MediaFit 
-            mediaScore={statsGerais.mediaScore} 
-            loading={loading}
-          />
-
-          {/* Funil de Candidaturas */}
-          <StatusFunil 
-            novas={statsGerais.novas}
-            emAndamento={statsGerais.emAndamento}
-            dispensadas={statsGerais.dispensadas}
-            descartadas={statsGerais.descartadas}
-            statusAtivo={filtros.status}
-            alternarStatus={(st) => alternarFiltro('status', st)}
-          />
-
-          {/* Barra de Filtros, Slider e Chips */}
+          {/* Barra de Filtros */}
           <FiltrosBar 
             filtros={filtros}
             atualizarFiltro={atualizarFiltro}
@@ -440,7 +402,7 @@ export default function App() {
             abrirBuscaModal={() => setBuscaModalAberta(true)}
           />
 
-          {/* Feed Operacional (Largura total col-12) */}
+          {/* Feed Operacional */}
           <FeedTable 
             vagasFiltradas={vagasFiltradas}
             vagaSelecionada={vagaSelecionada}
@@ -458,7 +420,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Gaveta de Detalhes Deslizante (Slide-Over) */}
       <DetailPanel 
         vagaSelecionada={vagaSelecionada}
         isOpen={gavetaAberta}
@@ -471,7 +432,6 @@ export default function App() {
         origemFocoRef={origemFocoRef}
       />
 
-      {/* Modal de Busca Rápida Ctrl+K */}
       <BuscaModal 
         isOpen={buscaModalAberta}
         onClose={() => setBuscaModalAberta(false)}
@@ -482,7 +442,6 @@ export default function App() {
         }}
       />
 
-     {/* Modal de Login do Dono com Senha */}
       <LoginModal
         isOpen={loginModalAberta}
         onClose={() => setLoginModalAberta(false)}
