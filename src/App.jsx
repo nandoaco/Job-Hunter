@@ -1,19 +1,19 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { tokens } from './styles/tokens';
+import './styles/app.css';
 import { useAuth } from './hooks/useAuth';
 import { useVagas } from './hooks/useVagas';
 import { useFiltros } from './hooks/useFiltros';
-import { calcularEstatisticas } from './lib/vagas';
-import Header from './components/Header';
-import KpiIngestao from './components/KpiIngestao';
-import IndicadoresCarrossel from './components/IndicadoresCarrossel';
-import FiltrosBar from './components/FiltrosBar';
-import FeedTable from './components/FeedTable';
+import { calcularEstatisticas, LIMITE_ALTO } from './lib/vagas';
+import TopBar from './components/TopBar';
+import ResumoBar from './components/ResumoBar';
+import FiltrosChips from './components/FiltrosChips';
+import FiltrosSheet from './components/FiltrosSheet';
+import FeedCards from './components/FeedCards';
 import DetailPanel from './components/DetailPanel';
-import DistribuicaoVagas from './components/DistribuicaoVagas';
 import BuscaModal from './components/BuscaModal';
 import LoginModal from './components/LoginModal';
 import ImportadorStatusBanner from './components/ImportadorStatusBanner';
+import Toast from './components/Toast';
 
 export default function App() {
   const { user, enviando, mensagemAuth, setMensagemAuth, loginComSenha, logout } = useAuth();
@@ -26,8 +26,6 @@ export default function App() {
     erroSincronizacao,
     modoDemo,
     setModoDemo,
-    ultimaAtualizacao,
-    ultimaVagaCreatedAt,
     vagaSelecionada,
     setVagaSelecionada,
     carregarVagas,
@@ -37,32 +35,88 @@ export default function App() {
 
   const [buscaModalAberta, setBuscaModalAberta] = useState(false);
   const [loginModalAberta, setLoginModalAberta] = useState(false);
+  const [filtrosAberta, setFiltrosAberta] = useState(false);
   const [gavetaAberta, setGavetaAberta] = useState(false);
   const [indiceFocado, setIndiceFocado] = useState(0);
+  const [toast, setToast] = useState(null);
+  // o destaque de foco nos cards só aparece enquanto se navega pelo teclado
+  const [tecladoAtivo, setTecladoAtivo] = useState(false);
 
   const linhaRefs = useRef([]);
-  const origemFocoRef = useRef(null);
 
-  // Hook Central de Filtros
+  // Sempre a versão mais recente da função de status (o "Desfazer" roda depois de alguns segundos)
+  const alterarStatusRef = useRef(alterarStatusVaga);
+  alterarStatusRef.current = alterarStatusVaga;
+
   const {
     filtros,
     vagasFiltradas,
     opcoesUnicas,
     atualizarFiltro,
+    aplicarFiltros,
     alternarFiltro,
     limparTodosFiltros
   } = useFiltros(vagas);
 
-  const abrirGavetaComVaga = useCallback((vaga, index) => {
-    setVagaSelecionada(vaga);
-    setIndiceFocado(index);
-    origemFocoRef.current = linhaRefs.current[index] || document.activeElement;
-    setGavetaAberta(true);
-  }, [setVagaSelecionada]);
+  const statsGerais = useMemo(() => calcularEstatisticas(vagas), [vagas]);
 
-  const fecharGaveta = useCallback(() => {
-    setGavetaAberta(false);
-  }, []);
+  // ----- Vista padrão = só vagas com nota alta, sem descartadas, melhores primeiro -----
+  const vistaPadrao =
+    filtros.scoreMin === LIMITE_ALTO &&
+    filtros.status === 'ATIVAS' &&
+    filtros.modelo === 'TODOS' &&
+    filtros.fonte === 'TODOS' &&
+    filtros.periodo === 'TODOS' &&
+    filtros.localizacao === 'TODAS' &&
+    filtros.faixa === 'TODOS' &&
+    !filtros.texto &&
+    !filtros.dataDia;
+
+  const qtdAvancados = [
+    filtros.fonte !== 'TODOS',
+    filtros.periodo !== 'TODOS',
+    filtros.status !== 'ATIVAS',
+    filtros.ordenacao !== 'SCORE',
+    filtros.localizacao !== 'TODAS',
+    filtros.faixa !== 'TODOS',
+    filtros.scoreMin !== 0 && filtros.scoreMin !== LIMITE_ALTO,
+    !['TODOS', 'Remoto', 'Híbrido'].includes(filtros.modelo),
+    Boolean(filtros.dataDia)
+  ].filter(Boolean).length;
+
+  const resumoAtivo =
+    filtros.status === 'NOVA'
+      ? 'novas'
+      : filtros.status === 'EM_ANDAMENTO'
+        ? 'andamento'
+        : filtros.status === 'ATIVAS' && filtros.scoreMin === LIMITE_ALTO
+          ? 'altas'
+          : null;
+
+  const aoSelecionarResumo = (id) => {
+    if (id === resumoAtivo) {
+      limparTodosFiltros();
+    } else if (id === 'novas') {
+      aplicarFiltros({ status: 'NOVA', scoreMin: 0, ordenacao: 'RECENTES' });
+    } else if (id === 'andamento') {
+      aplicarFiltros({ status: 'EM_ANDAMENTO', scoreMin: 0 });
+    } else {
+      limparTodosFiltros();
+    }
+  };
+
+  // ----- Gaveta de detalhes -----
+  const abrirGavetaComVaga = useCallback(
+    (vaga, index) => {
+      setVagaSelecionada(vaga);
+      setIndiceFocado(index);
+      setGavetaAberta(true);
+    },
+    [setVagaSelecionada]
+  );
+
+  const fecharGaveta = useCallback(() => setGavetaAberta(false), []);
+  const fecharToast = useCallback(() => setToast(null), []);
 
   const vagaAtualIndex = useMemo(() => {
     if (!vagaSelecionada) return -1;
@@ -73,41 +127,63 @@ export default function App() {
   const temSeguinte = vagaAtualIndex >= 0 && vagaAtualIndex < vagasFiltradas.length - 1;
 
   const irParaVagaAnterior = useCallback(() => {
-    if (temAnterior) {
-      const novoIndex = vagaAtualIndex - 1;
-      setVagaSelecionada(vagasFiltradas[novoIndex]);
-      setIndiceFocado(novoIndex);
-    }
+    if (!temAnterior) return;
+    const novo = vagaAtualIndex - 1;
+    setVagaSelecionada(vagasFiltradas[novo]);
+    setIndiceFocado(novo);
   }, [temAnterior, vagaAtualIndex, vagasFiltradas, setVagaSelecionada]);
 
   const irParaVagaSeguinte = useCallback(() => {
-    if (temSeguinte) {
-      const novoIndex = vagaAtualIndex + 1;
-      setVagaSelecionada(vagasFiltradas[novoIndex]);
-      setIndiceFocado(novoIndex);
-    }
+    if (!temSeguinte) return;
+    const novo = vagaAtualIndex + 1;
+    setVagaSelecionada(vagasFiltradas[novo]);
+    setIndiceFocado(novo);
   }, [temSeguinte, vagaAtualIndex, vagasFiltradas, setVagaSelecionada]);
 
+  // ----- Ações sobre as vagas -----
+  const mudarStatus = useCallback((vaga, novoStatus) => {
+    const anterior = vaga.status_candidatura || 'NOVA';
+    alterarStatusRef.current(vaga.id, novoStatus);
+
+    if (novoStatus === 'DESCARTADO' || novoStatus === 'DISPENSADO') {
+      setGavetaAberta(false);
+      setToast({
+        id: Date.now(),
+        msg: novoStatus === 'DESCARTADO' ? 'Vaga descartada' : 'Vaga marcada como dispensada',
+        acao: 'Desfazer',
+        onAcao: () => alterarStatusRef.current(vaga.id, anterior)
+      });
+    }
+  }, []);
+
+  const aoCandidatar = useCallback((vaga) => {
+    setToast({
+      id: Date.now(),
+      msg: 'Vaga aberta em outra aba',
+      acao: 'Já me candidatei',
+      onAcao: () => alterarStatusRef.current(vaga.id, 'EM_ANDAMENTO')
+    });
+  }, []);
+
+  // ----- Atalhos de teclado (Ctrl+K, setas, j/k, Enter) -----
   useEffect(() => {
-    const handleGlobalKeyDown = (e) => {
+    const aoTeclar = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setBuscaModalAberta((prev) => !prev);
         return;
       }
 
-      if (buscaModalAberta || loginModalAberta || gavetaAberta) return;
+      if (buscaModalAberta || loginModalAberta || gavetaAberta || filtrosAberta) return;
 
-      const elementoAtivo = document.activeElement;
-      const tag = elementoAtivo?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select' || elementoAtivo?.isContentEditable) {
-        return;
-      }
-
+      const ativo = document.activeElement;
+      const tag = ativo?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || ativo?.isContentEditable) return;
       if (vagasFiltradas.length === 0) return;
 
       if (e.key === 'ArrowDown' || e.key.toLowerCase() === 'j') {
         e.preventDefault();
+        setTecladoAtivo(true);
         setIndiceFocado((prev) => {
           const proximo = prev < vagasFiltradas.length - 1 ? prev + 1 : 0;
           linhaRefs.current[proximo]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -115,324 +191,124 @@ export default function App() {
         });
       } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'k') {
         e.preventDefault();
+        setTecladoAtivo(true);
         setIndiceFocado((prev) => {
           const anterior = prev > 0 ? prev - 1 : vagasFiltradas.length - 1;
           linhaRefs.current[anterior]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
           return anterior;
         });
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' && tag !== 'button' && tag !== 'a' && tag !== 'article') {
         e.preventDefault();
-        if (vagasFiltradas[indiceFocado]) {
-          abrirGavetaComVaga(vagasFiltradas[indiceFocado], indiceFocado);
-        }
+        if (vagasFiltradas[indiceFocado]) abrirGavetaComVaga(vagasFiltradas[indiceFocado], indiceFocado);
       }
     };
 
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [buscaModalAberta, loginModalAberta, gavetaAberta, vagasFiltradas, indiceFocado, abrirGavetaComVaga]);
-
-  const statsGerais = useMemo(() => calcularEstatisticas(vagas), [vagas]);
+    const aoPonteiro = () => setTecladoAtivo(false);
+    window.addEventListener('keydown', aoTeclar);
+    window.addEventListener('pointerdown', aoPonteiro);
+    return () => {
+      window.removeEventListener('keydown', aoTeclar);
+      window.removeEventListener('pointerdown', aoPonteiro);
+    };
+  }, [buscaModalAberta, loginModalAberta, gavetaAberta, filtrosAberta, vagasFiltradas, indiceFocado, abrirGavetaComVaga]);
 
   return (
-    <div style={{ backgroundColor: tokens.colors.background, color: tokens.colors.textPrimary, minHeight: '100vh', fontFamily: tokens.typography.fontFamily, padding: tokens.spacing.md }}>
-      
-      <style>{`
-        * { box-sizing: border-box; }
-        
-        .grid-dashboard {
-          display: grid;
-          grid-template-columns: repeat(12, 1fr);
-          gap: 16px;
-        }
-
-        .col-12 { grid-column: span 12; }
-
-        .header-box {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-        .header-controls {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-          width: auto;
-        }
-        .search-input {
-          width: 220px;
-        }
-
-        .mobile-feed-cards {
-          display: none;
-        }
-        .table-wrapper {
-          display: block;
-          overflow-x: auto;
-        }
-
-        @keyframes pulseSkeleton {
-          0% { opacity: 0.5; }
-          50% { opacity: 0.9; }
-          100% { opacity: 0.5; }
-        }
-
-        .skeleton-pulse {
-          animation: pulseSkeleton 1.4s ease-in-out infinite;
-        }
-
-        @keyframes fadeInSlide {
-          from {
-            opacity: 0;
-            transform: translateY(6px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .row-stagger-entry {
-          animation: fadeInSlide 260ms ease-out both;
-        }
-
-        .drawer-overlay {
-          animation: fadeIn 200ms ease-out both;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        .drawer-panel {
-          animation: slideInRight 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-
-        .kbd-hint {
-          background-color: ${tokens.colors.surfaceAlt};
-          color: ${tokens.colors.textSecondary};
-          border: 1px solid ${tokens.colors.border};
-          padding: 2px 6px;
-          border-radius: ${tokens.radii.sm};
-          font-size: 11px;
-          font-family: inherit;
-        }
-
-        .interactive-btn:hover {
-          filter: brightness(1.15);
-        }
-        .interactive-btn:focus-visible, .feed-row:focus-visible {
-          outline: 2px solid ${tokens.colors.highlight} !important;
-          outline-offset: 2px;
-        }
-        .feed-row:hover {
-          background-color: rgba(255, 255, 255, 0.04) !important;
-        }
-        .primary-action-btn:hover {
-          background-color: ${tokens.colors.highlightHover} !important;
-          box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          *, ::before, ::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-            scroll-behavior: auto !important;
-          }
-          .skeleton-pulse {
-            animation: none !important;
-            opacity: 0.7 !important;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .header-box {
-            flex-direction: column;
-            align-items: stretch !important;
-          }
-          .header-controls {
-            width: 100% !important;
-            flex-wrap: wrap;
-          }
-          .search-input {
-            flex: 1 1 100% !important;
-            width: 100% !important;
-          }
-          .table-wrapper {
-            display: none !important;
-          }
-          .mobile-feed-cards {
-            display: block !important;
-          }
-          .drawer-panel {
-            max-width: 100% !important;
-          }
-        }
-      `}</style>
-
-      {modoDemo && (
-        <div style={{
-          backgroundColor: '#92400e',
-          color: '#ffffff',
-          padding: '10px 16px',
-          borderRadius: tokens.radii.md,
-          marginBottom: tokens.spacing.md,
-          fontSize: tokens.typography.sizes.xs,
-          fontWeight: tokens.typography.weights.bold,
-          textAlign: 'center',
-          letterSpacing: '0.5px',
-          border: `1px solid ${tokens.colors.yellow}`
-        }}>
-          ⚠️ MODO DEMONSTRAÇÃO ATIVO: Exibindo dados fictícios de demonstração.
-        </div>
-      )}
-
-      {erroSincronizacao && (
-        <div style={{
-          backgroundColor: 'rgba(244, 63, 94, 0.15)',
-          color: tokens.colors.red,
-          border: `1px solid ${tokens.colors.red}`,
-          padding: '8px 14px',
-          borderRadius: tokens.radii.md,
-          marginBottom: tokens.spacing.sm,
-          fontSize: tokens.typography.sizes.xs,
-          fontWeight: 'bold',
-          textAlign: 'center'
-        }}>
-          {erroSincronizacao}
-        </div>
-      )}
-
-      {!user && !modoDemo && (
-        <div style={{
-          backgroundColor: tokens.colors.surfaceAlt,
-          color: tokens.colors.textSecondary,
-          border: `1px solid ${tokens.colors.border}`,
-          padding: '6px 12px',
-          borderRadius: tokens.radii.md,
-          marginBottom: tokens.spacing.sm,
-          fontSize: '11px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span>ℹ️ <strong>Modo visitante:</strong> As alterações de status ficam salvas apenas neste navegador.</span>
-          <button
-            onClick={() => setLoginModalAberta(true)}
-            style={{ background: 'none', border: 'none', color: tokens.colors.highlight, cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}
-          >
-            É o dono? Entrar
-          </button>
-        </div>
-      )}
-
-      <ImportadorStatusBanner
-        user={user}
-        vagas={vagas}
-        onImportacaoConcluida={recarregarStatus}
-      />
-
-      <Header 
+    <div className="app">
+      <TopBar
         termoBusca={filtros.texto}
         setTermoBusca={(txt) => atualizarFiltro('texto', txt)}
+        abrirBusca={() => setBuscaModalAberta(true)}
         carregarVagas={carregarVagas}
         atualizando={atualizando}
         modoDemo={modoDemo}
         setModoDemo={setModoDemo}
-        abrirBuscaModal={() => setBuscaModalAberta(true)}
         user={user}
         onAbrirLogin={() => setLoginModalAberta(true)}
         onLogout={logout}
       />
 
-      {erro && !modoDemo ? (
-        <div style={{ backgroundColor: tokens.colors.surface, border: `1px solid ${tokens.colors.red}`, borderRadius: tokens.radii.lg, padding: '32px', textAlign: 'center', margin: '20px 0' }}>
-          <div style={{ color: tokens.colors.red, fontSize: tokens.typography.sizes.md, fontWeight: tokens.typography.weights.bold, marginBottom: '8px' }}>
-            Falha na conexão com o banco de dados
+      <main className="main">
+        {modoDemo && (
+          <div className="faixa faixa-demo">
+            <span>Modo demonstração: você está vendo dados fictícios.</span>
+            <button type="button" onClick={() => setModoDemo(false)}>Sair</button>
           </div>
-          <div style={{ color: tokens.colors.textSecondary, fontSize: tokens.typography.sizes.body, marginBottom: '18px' }}>
-            Não foi possível recuperar as vagas do Supabase. Verifique a conexão ou tente novamente.
+        )}
+
+        {erroSincronizacao && (
+          <div className="faixa faixa-erro" role="alert">
+            <span>{erroSincronizacao}</span>
           </div>
-          <button 
-            onClick={carregarVagas}
-            className="interactive-btn"
-            style={{ backgroundColor: tokens.colors.highlight, color: tokens.colors.background, border: 'none', padding: '0 20px', height: '36px', borderRadius: tokens.radii.md, fontWeight: tokens.typography.weights.bold, fontSize: tokens.typography.sizes.body, cursor: 'pointer' }}
-          >
-            Tentar novamente
-          </button>
-        </div>
-      ) : (
-        <div className="grid-dashboard">
-          {/* Card do Gráfico de Ingestão Diária mantido intacto */}
-          <div className="col-12">
-            <KpiIngestao 
-              total={statsGerais.total} 
-              vagas={vagas}
-              ultimaVagaCreatedAt={ultimaVagaCreatedAt}
-              ultimaAtualizacao={ultimaAtualizacao}
-              diaAtivo={filtros.dataDia}
-              alternarDia={(dia) => alternarFiltro('dataDia', dia)}
-              loading={loading}
+        )}
+
+        <ImportadorStatusBanner user={user} vagas={vagas} onImportacaoConcluida={recarregarStatus} />
+
+        {erro && !modoDemo ? (
+          <div className="erro-box" role="alert">
+            <h2>Não foi possível carregar as vagas</h2>
+            <p>Verifique a conexão e tente de novo. Se continuar, confira se o Supabase está no ar.</p>
+            <button type="button" className="btn btn-primary" onClick={carregarVagas}>Tentar de novo</button>
+          </div>
+        ) : (
+          <>
+            <ResumoBar
+              novas={statsGerais.novas}
+              altas={statsGerais.altasAtivas}
+              emAndamento={statsGerais.emAndamento}
+              ativo={resumoAtivo}
+              onSelecionar={aoSelecionarResumo}
             />
-          </div>
 
-          {/* Componente Único de Indicadores em Carrossel */}
-          <IndicadoresCarrossel 
-            stats={statsGerais}
-            filtros={filtros}
-            alternarFiltro={alternarFiltro}
-            limparTodosFiltros={limparTodosFiltros}
-          />
+            <FiltrosChips
+              filtros={filtros}
+              aplicarFiltros={aplicarFiltros}
+              alternarFiltro={alternarFiltro}
+              qtdAvancados={qtdAvancados}
+              onAbrirFiltros={() => setFiltrosAberta(true)}
+            />
 
-          {/* Barra de Filtros */}
-          <FiltrosBar 
-            filtros={filtros}
-            atualizarFiltro={atualizarFiltro}
-            limparTodosFiltros={limparTodosFiltros}
-            opcoesUnicas={opcoesUnicas}
-            totalGeral={statsGerais.total}
-            totalFiltrado={vagasFiltradas.length}
-            abrirBuscaModal={() => setBuscaModalAberta(true)}
-          />
+            <FeedCards
+              vagas={vagasFiltradas}
+              totalGeral={statsGerais.total}
+              loading={loading}
+              vistaPadrao={vistaPadrao}
+              ordemPorScore={filtros.ordenacao === 'SCORE'}
+              indiceFocado={tecladoAtivo ? indiceFocado : -1}
+              vagaSelecionadaId={vagaSelecionada?.id}
+              gavetaAberta={gavetaAberta}
+              linhaRefs={linhaRefs}
+              onAbrir={abrirGavetaComVaga}
+              onCandidatar={aoCandidatar}
+              onDescartar={(v) => mudarStatus(v, 'DESCARTADO')}
+              onVerTodas={() => aplicarFiltros({ scoreMin: 0 })}
+              onLimpar={limparTodosFiltros}
+            />
+          </>
+        )}
+      </main>
 
-          {/* Feed Operacional */}
-          <FeedTable 
-            vagasFiltradas={vagasFiltradas}
-            vagaSelecionada={vagaSelecionada}
-            indiceFocado={indiceFocado}
-            aoSelecionarVaga={abrirGavetaComVaga}
-            filtroNivel={filtros.faixa}
-            setFiltroNivel={(faixa) => atualizarFiltro('faixa', faixa)}
-            limparFiltros={limparTodosFiltros}
-            loading={loading}
-            linhaRefs={linhaRefs}
-          />
-
-          {/* Distribuição das Vagas Ingeridas */}
-          <DistribuicaoVagas vagas={vagas} />
-        </div>
-      )}
-
-      <DetailPanel 
-        vagaSelecionada={vagaSelecionada}
+      <DetailPanel
+        vaga={vagaSelecionada}
         isOpen={gavetaAberta}
         onClose={fecharGaveta}
-        alterarStatusVaga={alterarStatusVaga}
+        aoMudarStatus={mudarStatus}
         onVagaAnterior={irParaVagaAnterior}
         onVagaSeguinte={irParaVagaSeguinte}
         temAnterior={temAnterior}
         temSeguinte={temSeguinte}
-        origemFocoRef={origemFocoRef}
       />
 
-      <BuscaModal 
+      <FiltrosSheet
+        aberto={filtrosAberta}
+        onClose={() => setFiltrosAberta(false)}
+        filtros={filtros}
+        atualizarFiltro={atualizarFiltro}
+        limparTodosFiltros={limparTodosFiltros}
+        opcoesUnicas={opcoesUnicas}
+        totalFiltrado={vagasFiltradas.length}
+      />
+
+      <BuscaModal
         isOpen={buscaModalAberta}
         onClose={() => setBuscaModalAberta(false)}
         vagas={vagas}
@@ -450,6 +326,8 @@ export default function App() {
         mensagemAuth={mensagemAuth}
         setMensagemAuth={setMensagemAuth}
       />
+
+      <Toast toast={toast} onFechar={fecharToast} />
     </div>
   );
 }

@@ -58,29 +58,36 @@ export function useStatusVagas(user) {
     const estadoAnterior = { ...mapaStatus };
 
     // 1. Atualização Otimista no estado visual da aplicação
-    const atualizado = {
-      ...mapaStatus,
-      [vagaId]: {
-        status: novoStatus,
-        data: dataHoraFormatada,
-        obs: obs
-      }
-    };
+    const atualizado = { ...mapaStatus };
+    if (novoStatus === 'NOVA') {
+      // "Nova" é a ausência de status: não existe linha no banco para ela
+      delete atualizado[vagaId];
+    } else {
+      atualizado[vagaId] = { status: novoStatus, data: dataHoraFormatada, obs: obs };
+    }
     setMapaStatus(atualizado);
 
     // 2. Persistência
     if (user && supabase) {
       try {
-        const payload = {
-          user_id: user.id,
-          vaga_id: vagaId,
-          status: novoStatus,
-          atualizado_em: new Date().toISOString()
-        };
-
-        const { error } = await supabase
-          .from('vaga_status')
-          .upsert(payload, { onConflict: 'user_id, vaga_id' });
+        let error;
+        if (novoStatus === 'NOVA') {
+          ({ error } = await supabase
+            .from('vaga_status')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('vaga_id', vagaId));
+        } else {
+          const payload = {
+            user_id: user.id,
+            vaga_id: vagaId,
+            status: novoStatus,
+            atualizado_em: new Date().toISOString()
+          };
+          ({ error } = await supabase
+            .from('vaga_status')
+            .upsert(payload, { onConflict: 'user_id,vaga_id' }));
+        }
 
         if (error) throw error;
         mapaAnteriorRef.current = atualizado;
