@@ -12,7 +12,11 @@ export default function Sheet({ aberto, onClose, labelledBy, variante = 'lateral
     const origem = document.activeElement;
     const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const t = setTimeout(() => painelRef.current?.focus(), 30);
+    const t = setTimeout(() => {
+      const painel = painelRef.current;
+      // não rouba o foco se um campo de dentro já o recebeu (ex.: autoFocus do login)
+      if (painel && !painel.contains(document.activeElement)) painel.focus();
+    }, 30);
 
     return () => {
       clearTimeout(t);
