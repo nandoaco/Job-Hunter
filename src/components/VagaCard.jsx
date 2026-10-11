@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink, Trash2 } from 'lucide-react';
 import ScoreRing from './ScoreRing';
+import CarroselVaga from './CarroselVaga';
 import { formatarTempoRelativo, rotuloStatus } from '../lib/vagas';
 
 const VagaCard = React.forwardRef(function VagaCard(
@@ -8,7 +9,6 @@ const VagaCard = React.forwardRef(function VagaCard(
   ref
 ) {
   const status = (vaga.status_candidatura || 'NOVA').toUpperCase();
-  const razao = (vaga.justificativa || '').trim();
   const remoto = (vaga.modelo_trabalho || '').toLowerCase().includes('remot');
   const mostrarLocal =
     vaga.localizacao &&
@@ -49,12 +49,7 @@ const VagaCard = React.forwardRef(function VagaCard(
         {vaga.created_at && <span>{formatarTempoRelativo(vaga.created_at)}</span>}
       </div>
 
-      {razao && (
-        <div className="razao">
-          <b>Por que combina</b>
-          <p>{razao}</p>
-        </div>
-      )}
+      <CarroselVaga vaga={vaga} />
 
       <div className="acoes">
         {vaga.url_original ? (

@@ -2,7 +2,7 @@
 
 Sistema que busca vagas de cibersegurança (SOC / Blue Team) todos os dias, descarta o que não serve, pede a uma IA para dar uma nota de aderência ao meu perfil e mostra só as melhores num painel feito para o celular.
 
-![Status](https://img.shields.io/badge/Status-Operacional-00e5ff?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Operacional-9b7470?style=for-the-badge)
 ![n8n](https://img.shields.io/badge/Orquestração-n8n-ea580c?style=for-the-badge&logo=n8n)
 ![Gemini AI](https://img.shields.io/badge/IA-Google%20Gemini-4285F4?style=for-the-badge&logo=google)
 ![Supabase](https://img.shields.io/badge/Banco-Supabase%20Postgres-3ECF8E?style=for-the-badge&logo=supabase)
@@ -49,10 +49,11 @@ Decisões que importam:
 
 ## O painel
 
-Feito primeiro para o celular (360 px) e depois ampliado para tablet e desktop.
+Feito primeiro para o celular (360 px) e depois ampliado para tablet e desktop. Tema claro, com paleta rosé, sálvia e verde.
 
 - **Lista curada:** por padrão mostra só vagas com nota 75+, da melhor para a pior, sem as descartadas. "Todas" remove o corte.
-- **Anel de nota:** verde (75+), âmbar (60 a 74) e rosa (abaixo disso).
+- **Anel de nota:** verde (75+), âmbar (60 a 74) e vermelho (abaixo disso).
+- **Carrossel no card:** deslize para ver "Por que combina", "Sobre a vaga" (descrição real do anúncio) e pontos fortes e de atenção.
 - **Por que combina:** o parecer da IA aparece no próprio card, e a gaveta de detalhes mostra pontos fortes, pontos de atenção e a descrição completa.
 - **Ações rápidas:** Candidatar-me (abre a vaga e oferece marcar como candidatado) e Descartar, com Desfazer.
 - **Filtros:** chips para o essencial (Alta, Todas, Remoto, Híbrido) e um painel para o resto (match mínimo, fonte, período, situação, ordem).
