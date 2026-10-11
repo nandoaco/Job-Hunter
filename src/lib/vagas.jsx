@@ -1,6 +1,29 @@
 import React from 'react';
 import { tokens } from '../styles/tokens';
 
+// Corte de qualidade: a partir daqui a vaga é "alta aderência" (mesmo corte do e-mail das 7h)
+export const LIMITE_ALTO = 75;
+export const LIMITE_MEDIO = 60;
+
+const ROTULOS_STATUS = {
+  NOVA: 'Nova',
+  EM_ANDAMENTO: 'Candidatado',
+  ENTREVISTA: 'Entrevista',
+  PROPOSTA: 'Proposta',
+  DISPENSADO: 'Dispensado',
+  DESCARTADO: 'Descartada'
+};
+
+export function rotuloStatus(status) {
+  return ROTULOS_STATUS[(status || 'NOVA').toUpperCase()] || 'Nova';
+}
+
+// Vaga ainda em jogo (não foi descartada nem dispensada)
+export function statusEhAtivo(status) {
+  const st = (status || 'NOVA').toUpperCase();
+  return st !== 'DESCARTADO' && st !== 'DISPENSADO';
+}
+
 // Validação estrita se um score é numérico válido (0 é válido)
 export function temScoreValido(score) {
   if (score === null || score === undefined || score === '') return false;
@@ -23,14 +46,14 @@ export function getScoreColors(score) {
   }
 
   const num = Number(score);
-  if (num >= 80) {
+  if (num >= LIMITE_ALTO) {
     return {
       bg: 'rgba(16, 185, 129, 0.15)',
       color: tokens.colors.green,
       border: 'rgba(16, 185, 129, 0.4)'
     };
   }
-  if (num >= 60) {
+  if (num >= LIMITE_MEDIO) {
     return {
       bg: 'rgba(245, 158, 11, 0.15)',
       color: tokens.colors.yellow,
@@ -114,6 +137,7 @@ export function calcularEstatisticas(vagas = []) {
     dispensadas: 0,
     descartadas: 0,
     altas: 0,
+    altasAtivas: 0,
     medias: 0,
     baixas: 0,
     totalComScore: 0,
@@ -134,8 +158,10 @@ export function calcularEstatisticas(vagas = []) {
       stats.totalComScore++;
       somaScores += scoreNum;
 
-      if (scoreNum >= 80) stats.altas++;
-      else if (scoreNum >= 60) stats.medias++;
+      if (scoreNum >= LIMITE_ALTO) {
+        stats.altas++;
+        if (statusEhAtivo(v.status_candidatura)) stats.altasAtivas++;
+      } else if (scoreNum >= LIMITE_MEDIO) stats.medias++;
       else stats.baixas++;
     }
   });

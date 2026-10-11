@@ -2,7 +2,7 @@
 const agora = Date.now();
 const diaMs = 86400000;
 
-export const DEMO_VAGAS = [
+const BASE = [
   {
     id: 'demo-01',
     titulo: 'Analista de SOC N1 Júnior',
@@ -15,6 +15,7 @@ export const DEMO_VAGAS = [
     url_original: 'https://exemplo.com/vaga/demo-01',
     created_at: new Date(agora - 0.2 * diaMs).toISOString(),
     justificativa: 'Forte alinhamento com monitoramento de alertas em SIEM, triagem N1 e análise de eventos no Linux.',
+    descricao_raw: 'Monitorar alertas do SIEM, fazer a triagem de eventos e escalar incidentes para o N2. Requisitos: redes e TCP/IP, Windows e Linux, vontade de aprender. Turno diurno, 3 dias no escritório.',
     pontos_fortes: ['Fundamentos sólidos de Redes e TCP/IP', 'Análise de logs de autenticação Linux', 'Mentalidade analítica para triagem'],
     gaps: ['Conhecimento prático avançado em Splunk']
   },
@@ -30,6 +31,7 @@ export const DEMO_VAGAS = [
     url_original: 'https://exemplo.com/vaga/demo-02',
     created_at: new Date(agora - 0.8 * diaMs).toISOString(),
     justificativa: 'Excelente fit para rotinas operacionais defensivas, investigação de alertas e criação de regras simples de firewall.',
+    descricao_raw: 'Apoiar o time de defesa na análise de logs, resposta inicial a incidentes e melhoria de regras de firewall. Desejável: certificação Security+ ou equivalente. Trabalho 100% remoto.',
     pontos_fortes: ['Administração básica de Linux', 'Investigação de tráfego de rede', 'Uso do framework NIST'],
     gaps: ['Certificação Security+']
   },
@@ -45,6 +47,7 @@ export const DEMO_VAGAS = [
     url_original: 'https://exemplo.com/vaga/demo-03',
     created_at: new Date(agora - 1.5 * diaMs).toISOString(),
     justificativa: 'Boa base de segurança da informação com foco em resposta inicial a incidentes e triagem de phishing.',
+    descricao_raw: 'Investigar e-mails de phishing, classificar a severidade dos chamados e documentar o tratamento. Conhecimento básico de EDR é um diferencial.',
     pontos_fortes: ['Análise de cabeçalhos de e-mail e phishing', 'Firewall e controle de acesso'],
     gaps: ['Inglês intermediário para documentação']
   },
@@ -454,3 +457,11 @@ export const DEMO_VAGAS = [
     gaps: ['Conhecimento prático avançado em plataformas de SOAR proprietárias']
   }
 ];
+
+// Descrição fictícia para as vagas de demonstração que não têm uma própria
+export const DEMO_VAGAS = BASE.map((v) => ({
+  ...v,
+  descricao_raw:
+    v.descricao_raw ||
+    `Atuação como ${v.titulo} na ${v.empresa}. Rotina de monitoramento, triagem e documentação de incidentes de segurança. Requisitos: redes, Windows e Linux, vontade de aprender.`
+}));
