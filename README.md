@@ -104,14 +104,24 @@ Sem as variáveis do Supabase, o painel ainda abre no modo demonstração (menu,
 | Front | React 18, Vite, Tailwind (base) e CSS próprio |
 | Hospedagem | Vercel |
 
+## O que aprendi
+
+- **Deixar o banco decidir o que é repetido.** Uma restrição única no `hash_dedup` é mais confiável do que qualquer checagem no fluxo. O fluxo ainda consulta o banco antes da IA para não gastar cota com vaga que já existe.
+- **Travas que falham alto.** Se o número de respostas da IA não bate com o de vagas, o fluxo para em vez de gravar o parecer na vaga errada.
+- **Segurança no banco, não na tela.** Esconder vagas no front não protege nada; a regra de leitura (RLS) é que decide quem vê os dados.
+- **Mobile primeiro.** Desenhar em 360 px antes do desktop evitou rolagem lateral e botões pequenos.
+
 ## Roadmap
 
 - [x] Triagem por regras e nota com Gemini
 - [x] E-mail diário com as vagas 75+
 - [x] Uma busca por cargo, sem vagas repetidas
 - [x] Painel mobile-first com cards, filtros e detalhes
+- [x] Portfólio com dados fictícios para visitantes; vagas reais só para o dono logado
 - [ ] Kanban de candidaturas e histórico de mudanças (`vaga_historico`)
 - [ ] Alternar entre tema escuro e claro
 - [ ] Agente de busca personalizado, treinado por conversa
 - [ ] Carta de apresentação gerada a partir dos pontos de atenção da vaga
 - [ ] Bot no Telegram (`/vagas_hoje`)
+
+> O arquivo `workflow.json` é um retrato do fluxo do n8n em um dia específico e pode estar atrás da versão em produção. Credenciais não ficam no arquivo.
