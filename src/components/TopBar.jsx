@@ -17,6 +17,7 @@ export default function TopBar({
   modoDemo,
   setModoDemo,
   user,
+  visitante,
   onAbrirLogin,
   onLogout
 }) {
@@ -104,16 +105,18 @@ export default function TopBar({
                 <RefreshCw size={18} className={atualizando ? 'girando' : ''} aria-hidden="true" />
               </button>
 
-              <button
-                type="button"
-                role="menuitemcheckbox"
-                aria-checked={modoDemo}
-                className="menu-item"
-                onClick={() => setModoDemo(!modoDemo)}
-              >
-                <span>Ver demonstração</span>
-                <span className="switch" aria-hidden="true" />
-              </button>
+              {!visitante && (
+                <button
+                  type="button"
+                  role="menuitemcheckbox"
+                  aria-checked={modoDemo}
+                  className="menu-item"
+                  onClick={() => setModoDemo(!modoDemo)}
+                >
+                  <span>Ver demonstração</span>
+                  <span className="switch" aria-hidden="true" />
+                </button>
+              )}
 
               {user ? (
                 <button

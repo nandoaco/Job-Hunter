@@ -16,7 +16,7 @@ import ImportadorStatusBanner from './components/ImportadorStatusBanner';
 import Toast from './components/Toast';
 
 export default function App() {
-  const { user, enviando, mensagemAuth, setMensagemAuth, loginComSenha, logout } = useAuth();
+  const { user, loadingAuth, enviando, mensagemAuth, setMensagemAuth, loginComSenha, logout } = useAuth();
 
   const {
     vagas,
@@ -25,13 +25,14 @@ export default function App() {
     erro,
     erroSincronizacao,
     modoDemo,
+    visitante,
     setModoDemo,
     vagaSelecionada,
     setVagaSelecionada,
     carregarVagas,
     alterarStatusVaga,
     recarregarStatus
-  } = useVagas(user);
+  } = useVagas(user, !loadingAuth);
 
   const [buscaModalAberta, setBuscaModalAberta] = useState(false);
   const [loginModalAberta, setLoginModalAberta] = useState(false);
@@ -223,6 +224,7 @@ export default function App() {
         modoDemo={modoDemo}
         setModoDemo={setModoDemo}
         user={user}
+        visitante={visitante}
         onAbrirLogin={() => setLoginModalAberta(true)}
         onLogout={logout}
       />
@@ -230,8 +232,16 @@ export default function App() {
       <main className="main">
         {modoDemo && (
           <div className="faixa faixa-demo">
-            <span>Modo demonstração: você está vendo dados fictícios.</span>
-            <button type="button" onClick={() => setModoDemo(false)}>Sair</button>
+            <span>
+              {visitante
+                ? 'Portfólio com dados fictícios. As vagas reais ficam atrás do login.'
+                : 'Modo demonstração: você está vendo dados fictícios.'}
+            </span>
+            {visitante ? (
+              <button type="button" onClick={() => setLoginModalAberta(true)}>Entrar</button>
+            ) : (
+              <button type="button" onClick={() => setModoDemo(false)}>Sair</button>
+            )}
           </div>
         )}
 

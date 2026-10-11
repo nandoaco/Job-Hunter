@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { tokens } from '../styles/tokens';
+import { X } from 'lucide-react';
+import Sheet from './Sheet';
 
+// Login do dono. Nenhum e-mail vem preenchido: quem usa o próprio aparelho
+// pode deixar o navegador ou o gerenciador de senhas completar.
 export default function LoginModal({
   isOpen,
   onClose,
@@ -9,10 +12,14 @@ export default function LoginModal({
   mensagemAuth,
   setMensagemAuth
 }) {
-  const [email, setEmail] = useState('nandoaco@gmail.com');
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  if (!isOpen) return null;
+  const fechar = () => {
+    setMensagemAuth({ tipo: '', texto: '' });
+    setSenha('');
+    onClose();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,135 +35,65 @@ export default function LoginModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(11, 17, 32, 0.75)',
-        backdropFilter: 'blur(3px)',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px'
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: '380px',
-          backgroundColor: tokens.colors.surface,
-          borderRadius: tokens.radii.lg,
-          border: `1px solid ${tokens.colors.border}`,
-          padding: '24px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0, fontSize: tokens.typography.sizes.md, fontWeight: tokens.typography.weights.bold, color: tokens.colors.textPrimary }}>
-            Acesso Operacional (Dono)
-          </h3>
-          <button
-            onClick={() => { setMensagemAuth({ tipo: '', texto: '' }); onClose(); }}
-            style={{ background: 'none', border: 'none', color: tokens.colors.textSecondary, fontSize: '18px', cursor: 'pointer' }}
-          >
-            ✕
-          </button>
-        </div>
+    <Sheet aberto={isOpen} onClose={fechar} labelledBy="login-titulo" variante="centro">
+      <div className="sheet-head">
+        <h2 id="login-titulo">Entrar como dono</h2>
+        <button type="button" className="btn btn-icon" onClick={fechar} aria-label="Fechar">
+          <X size={20} aria-hidden="true" />
+        </button>
+      </div>
 
-        <p style={{ margin: '0 0 16px 0', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, lineHeight: 1.5 }}>
-          Identifique-se com sua conta de administrador para sincronizar os status com o Supabase.
+      <form className="sheet-scroll" onSubmit={handleSubmit}>
+        <p className="login-ajuda">
+          As vagas reais e a situação de cada uma ficam atrás do login. Use a conta cadastrada no Supabase.
         </p>
 
         {mensagemAuth?.texto && (
           <div
-            style={{
-              padding: '10px 12px',
-              borderRadius: tokens.radii.md,
-              fontSize: tokens.typography.sizes.xs,
-              marginBottom: '14px',
-              backgroundColor: mensagemAuth.tipo === 'sucesso' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-              color: mensagemAuth.tipo === 'sucesso' ? tokens.colors.green : tokens.colors.red,
-              border: `1px solid ${mensagemAuth.tipo === 'sucesso' ? tokens.colors.green : tokens.colors.red}`
-            }}
+            className={`login-msg ${mensagemAuth.tipo === 'sucesso' ? 'login-ok' : 'login-erro'}`}
+            role={mensagemAuth.tipo === 'sucesso' ? 'status' : 'alert'}
           >
             {mensagemAuth.texto}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, marginBottom: '6px' }}>
-              E-mail do Dono:
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: '100%',
-                height: '38px',
-                backgroundColor: tokens.colors.surfaceAlt,
-                border: `1px solid ${tokens.colors.border}`,
-                borderRadius: tokens.radii.md,
-                padding: '0 12px',
-                color: tokens.colors.textPrimary,
-                fontSize: tokens.typography.sizes.body,
-                outline: 'none'
-              }}
-            />
-          </div>
+        <div className="campo">
+          <label htmlFor="login-email">E-mail</label>
+          <input
+            id="login-email"
+            type="email"
+            name="email"
+            autoComplete="username"
+            inputMode="email"
+            autoCapitalize="none"
+            required
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: tokens.typography.sizes.xs, color: tokens.colors.textSecondary, marginBottom: '6px' }}>
-              Senha de Acesso:
-            </label>
-            <input
-              type="password"
-              required
-              autoFocus
-              placeholder="••••••••"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              style={{
-                width: '100%',
-                height: '38px',
-                backgroundColor: tokens.colors.surfaceAlt,
-                border: `1px solid ${tokens.colors.border}`,
-                borderRadius: tokens.radii.md,
-                padding: '0 12px',
-                color: tokens.colors.textPrimary,
-                fontSize: tokens.typography.sizes.body,
-                outline: 'none'
-              }}
-            />
-          </div>
+        <div className="campo">
+          <label htmlFor="login-senha">Senha</label>
+          <input
+            id="login-senha"
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            required
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+          />
+        </div>
 
-          <button
-            type="submit"
-            disabled={enviando || !senha}
-            className="interactive-btn"
-            style={{
-              backgroundColor: tokens.colors.highlight,
-              color: tokens.colors.background,
-              fontWeight: tokens.typography.weights.bold,
-              border: 'none',
-              height: '38px',
-              borderRadius: tokens.radii.md,
-              cursor: (enviando || !senha) ? 'not-allowed' : 'pointer',
-              fontSize: tokens.typography.sizes.xs,
-              marginTop: '6px'
-            }}
-          >
-            {enviando ? 'Autenticando...' : 'Entrar no Painel 🔐'}
-          </button>
-        </form>
-      </div>
-    </div>
+        <button
+          type="submit"
+          className="btn btn-primary login-enviar"
+          disabled={enviando || !email || !senha}
+        >
+          {enviando ? 'Entrando…' : 'Entrar'}
+        </button>
+      </form>
+    </Sheet>
   );
 }

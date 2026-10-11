@@ -58,12 +58,12 @@ Feito primeiro para o celular (360 px) e depois ampliado para tablet e desktop. 
 - **Ações rápidas:** Candidatar-me (abre a vaga e oferece marcar como candidatado) e Descartar, com Desfazer.
 - **Filtros:** chips para o essencial (Alta, Todas, Remoto, Híbrido) e um painel para o resto (match mínimo, fonte, período, situação, ordem).
 - **Acompanhamento:** situação de cada vaga (nova, candidatado, dispensado, descartado), salva no Supabase para o dono e no navegador para visitantes.
-- **Modo demonstração:** dados fictícios para quem visita o projeto.
+- **Portfólio para visitantes:** sem login, o painel mostra dados fictícios (o parecer da IA descreve o candidato real e fica atrás do login).
 - **Teclado:** `Ctrl+K` busca, `j`/`k` ou setas navegam, `Enter` abre, `Esc` fecha.
 
 ## Segurança
 
-1. **Chave pública só lê.** O navegador usa apenas a chave `anon`, com Row Level Security: a tabela de vagas é de leitura.
+1. **Vagas reais só para o dono.** O navegador usa apenas a chave `anon`, e a regra de leitura (Row Level Security) da tabela `vagas` libera só o usuário logado. Quem visita sem login vê um portfólio com dados fictícios e nem consulta o banco.
 2. **Status só do dono.** A situação de cada vaga fica em `vaga_status`, com política por usuário; só o dono logado grava.
 3. **Segredos fora do código.** A `service_role`, as credenciais de e-mail e as chaves de API ficam apenas no n8n. O `.env` está no `.gitignore`.
 

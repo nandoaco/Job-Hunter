@@ -3,12 +3,14 @@ import { supabase } from '../supabaseClient';
 import { DEMO_VAGAS } from '../data/demoVagas';
 import { useStatusVagas } from './useStatusVagas';
 
-export function useVagas(user) {
+export function useVagas(user, authPronto = true) {
   const [vagasReais, setVagasReais] = useState([]);
   const [loading, setLoading] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
   const [erro, setErro] = useState(null);
   const [modoDemo, setModoDemo] = useState(false);
+  // Visitante (sem login): vê só o portfólio com dados fictícios
+  const visitante = authPronto && !user;
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
   const [vagaSelecionadaId, setVagaSelecionadaId] = useState(null);
 
@@ -16,6 +18,13 @@ export function useVagas(user) {
   const { mapaStatus, atualizarStatus, recarregarStatus, erroSincronizacao } = useStatusVagas(user);
 
   const carregarVagas = useCallback(async () => {
+    if (!user) {
+      // sem login não consulta o banco: as vagas reais são só do dono
+      setVagasReais([]);
+      setLoading(false);
+      setAtualizando(false);
+      return;
+    }
     setAtualizando(true);
     setErro(null);
 
@@ -43,7 +52,7 @@ export function useVagas(user) {
       setLoading(false);
       setAtualizando(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     carregarVagas();
@@ -51,7 +60,7 @@ export function useVagas(user) {
 
   // Vagas combinadas com o status correspondente
   const vagas = useMemo(() => {
-    const base = modoDemo ? DEMO_VAGAS : vagasReais;
+    const base = modoDemo || visitante ? DEMO_VAGAS : vagasReais;
 
     return base.map((v) => {
       const infoStatus = mapaStatus[v.id] || {};
@@ -62,7 +71,7 @@ export function useVagas(user) {
         andamento_obs: infoStatus.obs || v.andamento_obs || ''
       };
     });
-  }, [modoDemo, vagasReais, mapaStatus]);
+  }, [modoDemo, visitante, vagasReais, mapaStatus]);
 
   const vagaSelecionada = useMemo(() => {
     if (vagas.length === 0) return null;
@@ -84,11 +93,12 @@ export function useVagas(user) {
 
   return {
     vagas,
-    loading,
+    loading: loading || !authPronto,
     atualizando,
     erro,
     erroSincronizacao,
-    modoDemo,
+    modoDemo: modoDemo || visitante,
+    visitante,
     setModoDemo,
     ultimaAtualizacao,
     ultimaVagaCreatedAt,
