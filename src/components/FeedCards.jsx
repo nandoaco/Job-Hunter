@@ -14,6 +14,7 @@ export default function FeedCards({
   linhaRefs,
   onAbrir,
   onCandidatar,
+  onAndamento,
   onDescartar,
   onVerTodas,
   onLimpar
@@ -66,6 +67,7 @@ export default function FeedCards({
               selecionada={gavetaAberta && vagaSelecionadaId === v.id}
               onAbrir={() => onAbrir(v, i)}
               onCandidatar={() => onCandidatar(v)}
+              onAndamento={() => onAndamento(v)}
               onDescartar={() => onDescartar(v)}
             />
           ))

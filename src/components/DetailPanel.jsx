@@ -22,6 +22,7 @@ export default function DetailPanel({
   isOpen,
   onClose,
   aoMudarStatus,
+  onOcultarEmpresa,
   onVagaAnterior,
   onVagaSeguinte,
   temAnterior,
@@ -121,6 +122,11 @@ export default function DetailPanel({
           {status !== 'NOVA' && (
             <button type="button" className="reset" onClick={() => aoMudarStatus(vaga, 'NOVA')}>
               Voltar para nova
+            </button>
+          )}
+          {vaga.empresa && (
+            <button type="button" className="reset reset-empresa" onClick={() => onOcultarEmpresa(vaga)}>
+              Ocultar vagas de {vaga.empresa}
             </button>
           )}
         </div>

@@ -55,7 +55,8 @@ Feito primeiro para o celular (360 px) e depois ampliado para tablet e desktop. 
 - **Anel de nota:** verde (75+), âmbar (60 a 74) e vermelho (abaixo disso).
 - **Carrossel no card:** deslize para ver "Por que combina", "Sobre a vaga" (descrição real do anúncio) e pontos fortes e de atenção.
 - **Por que combina:** o parecer da IA aparece no próprio card, e a gaveta de detalhes mostra pontos fortes, pontos de atenção e a descrição completa.
-- **Ações rápidas:** Candidatar-me (abre a vaga e oferece marcar como candidatado) e Descartar, com Desfazer.
+- **Ações rápidas:** Candidatar-me (abre a vaga), Me candidatei (tira a vaga da lista de abertas e leva para "Em andamento") e Descartar, com Desfazer.
+- **Ocultar empresa:** no detalhe da vaga, "Ocultar vagas de ..." esconde todas as vagas daquela empresa (salvo no aparelho). A lista fica em Filtros, com "Mostrar de novo".
 - **Filtros:** chips para o essencial (Alta, Todas, Remoto, Híbrido) e um painel para o resto (match mínimo, fonte, período, situação, ordem).
 - **Acompanhamento:** situação de cada vaga (nova, candidatado, dispensado, descartado), salva no Supabase para o dono e no navegador para visitantes.
 - **Portfólio para visitantes:** sem login, o painel mostra dados fictícios (o parecer da IA descreve o candidato real e fica atrás do login).

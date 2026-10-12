@@ -18,10 +18,20 @@ export function rotuloStatus(status) {
   return ROTULOS_STATUS[(status || 'NOVA').toUpperCase()] || 'Nova';
 }
 
-// Vaga ainda em jogo (não foi descartada nem dispensada)
+// Vaga ainda em aberto: não foi descartada, dispensada nem candidatada
 export function statusEhAtivo(status) {
   const st = (status || 'NOVA').toUpperCase();
-  return st !== 'DESCARTADO' && st !== 'DISPENSADO';
+  return st !== 'DESCARTADO' && st !== 'DISPENSADO' && st !== 'EM_ANDAMENTO';
+}
+
+// Chave para comparar nomes de empresa sem se enganar com acento, caixa ou espaço
+export function chaveEmpresa(nome) {
+  return (nome || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Validação estrita se um score é numérico válido (0 é válido)

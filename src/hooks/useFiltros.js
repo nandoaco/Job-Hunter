@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { LIMITE_ALTO, LIMITE_MEDIO } from '../lib/vagas';
+import { LIMITE_ALTO, LIMITE_MEDIO, statusEhAtivo } from '../lib/vagas';
 
 const FILTROS_INICIAIS = {
   texto: '',
@@ -118,7 +118,7 @@ export function useFiltros(vagas) {
 
         const stAtual = (v.status_candidatura || 'NOVA').toUpperCase();
         if (filtros.status === 'ATIVAS') {
-          if (stAtual === 'DESCARTADO' || stAtual === 'DISPENSADO') return false;
+          if (!statusEhAtivo(stAtual)) return false;
         } else if (filtros.status !== 'TODAS') {
           if (filtros.status === 'NOVA' && (v.status_candidatura && v.status_candidatura !== 'NOVA')) return false;
           if (filtros.status !== 'NOVA' && v.status_candidatura !== filtros.status) return false;

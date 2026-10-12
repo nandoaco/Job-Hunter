@@ -9,7 +9,9 @@ export default function FiltrosSheet({
   atualizarFiltro,
   limparTodosFiltros,
   opcoesUnicas,
-  totalFiltrado
+  totalFiltrado,
+  empresasOcultas = [],
+  onReexibirEmpresa
 }) {
   return (
     <Sheet aberto={aberto} onClose={onClose} labelledBy="filtros-titulo" variante="centro">
@@ -70,7 +72,7 @@ export default function FiltrosSheet({
         <div className="campo">
           <label htmlFor="f-situacao">Situação</label>
           <select id="f-situacao" value={filtros.status} onChange={(e) => atualizarFiltro('status', e.target.value)}>
-            <option value="ATIVAS">Em aberto (sem descartadas)</option>
+            <option value="ATIVAS">Em aberto</option>
             <option value="NOVA">Novas</option>
             <option value="EM_ANDAMENTO">Candidatadas</option>
             <option value="DISPENSADO">Dispensadas</option>
@@ -86,6 +88,22 @@ export default function FiltrosSheet({
             <option value="RECENTES">Mais recentes</option>
           </select>
         </div>
+
+        {empresasOcultas.length > 0 && (
+          <div className="campo">
+            <span className="rot-fixo">Empresas ocultas</span>
+            <ul className="ocultas">
+              {empresasOcultas.map((e) => (
+                <li key={e.chave}>
+                  <span>{e.nome}</span>
+                  <button type="button" className="btn" onClick={() => onReexibirEmpresa(e.chave)}>
+                    Mostrar de novo
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="sheet-foot">
