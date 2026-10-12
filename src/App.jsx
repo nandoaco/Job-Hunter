@@ -3,7 +3,8 @@ import './styles/app.css';
 import { useAuth } from './hooks/useAuth';
 import { useVagas } from './hooks/useVagas';
 import { useFiltros } from './hooks/useFiltros';
-import { calcularEstatisticas, LIMITE_ALTO } from './lib/vagas';
+import { useEmpresasOcultas } from './hooks/useEmpresasOcultas';
+import { calcularEstatisticas, LIMITE_ALTO, chaveEmpresa } from './lib/vagas';
 import TopBar from './components/TopBar';
 import ResumoBar from './components/ResumoBar';
 import FiltrosChips from './components/FiltrosChips';
@@ -49,6 +50,13 @@ export default function App() {
   const alterarStatusRef = useRef(alterarStatusVaga);
   alterarStatusRef.current = alterarStatusVaga;
 
+  // Empresas que o dono escondeu (ficam salvas neste aparelho)
+  const { empresasOcultas, ocultarEmpresa, reexibirEmpresa, estaOculta } = useEmpresasOcultas();
+  const vagasVisiveis = useMemo(
+    () => vagas.filter((v) => !estaOculta(v.empresa)),
+    [vagas, estaOculta]
+  );
+
   const {
     filtros,
     vagasFiltradas,
@@ -57,9 +65,9 @@ export default function App() {
     aplicarFiltros,
     alternarFiltro,
     limparTodosFiltros
-  } = useFiltros(vagas);
+  } = useFiltros(vagasVisiveis);
 
-  const statsGerais = useMemo(() => calcularEstatisticas(vagas), [vagas]);
+  const statsGerais = useMemo(() => calcularEstatisticas(vagasVisiveis), [vagasVisiveis]);
 
   // ----- Vista padrão = só vagas com nota alta, sem descartadas, melhores primeiro -----
   const vistaPadrao =
@@ -156,6 +164,38 @@ export default function App() {
       });
     }
   }, []);
+
+  // Botão "Me candidatei" do card: alterna entre candidatada e aberta
+  const alternarAndamento = useCallback((vaga) => {
+    const anterior = vaga.status_candidatura || 'NOVA';
+    if (anterior === 'EM_ANDAMENTO') {
+      alterarStatusRef.current(vaga.id, 'NOVA');
+      return;
+    }
+    alterarStatusRef.current(vaga.id, 'EM_ANDAMENTO');
+    setToast({
+      id: Date.now(),
+      msg: 'Marcada como candidatada',
+      acao: 'Desfazer',
+      onAcao: () => alterarStatusRef.current(vaga.id, anterior)
+    });
+  }, []);
+
+  const aoOcultarEmpresa = useCallback(
+    (vaga) => {
+      const nome = (vaga.empresa || '').trim();
+      if (!chaveEmpresa(nome)) return;
+      ocultarEmpresa(nome);
+      setGavetaAberta(false);
+      setToast({
+        id: Date.now(),
+        msg: `Vagas de ${nome} ocultas`,
+        acao: 'Desfazer',
+        onAcao: () => reexibirEmpresa(chaveEmpresa(nome))
+      });
+    },
+    [ocultarEmpresa, reexibirEmpresa]
+  );
 
   const aoCandidatar = useCallback((vaga) => {
     setToast({
@@ -289,6 +329,7 @@ export default function App() {
               linhaRefs={linhaRefs}
               onAbrir={abrirGavetaComVaga}
               onCandidatar={aoCandidatar}
+              onAndamento={alternarAndamento}
               onDescartar={(v) => mudarStatus(v, 'DESCARTADO')}
               onVerTodas={() => aplicarFiltros({ scoreMin: 0 })}
               onLimpar={limparTodosFiltros}
@@ -302,6 +343,7 @@ export default function App() {
         isOpen={gavetaAberta}
         onClose={fecharGaveta}
         aoMudarStatus={mudarStatus}
+        onOcultarEmpresa={aoOcultarEmpresa}
         onVagaAnterior={irParaVagaAnterior}
         onVagaSeguinte={irParaVagaSeguinte}
         temAnterior={temAnterior}
@@ -316,12 +358,14 @@ export default function App() {
         limparTodosFiltros={limparTodosFiltros}
         opcoesUnicas={opcoesUnicas}
         totalFiltrado={vagasFiltradas.length}
+        empresasOcultas={empresasOcultas}
+        onReexibirEmpresa={reexibirEmpresa}
       />
 
       <BuscaModal
         isOpen={buscaModalAberta}
         onClose={() => setBuscaModalAberta(false)}
-        vagas={vagas}
+        vagas={vagasVisiveis}
         onSelectVaga={(vaga) => {
           const idx = vagasFiltradas.findIndex((item) => item.id === vaga.id);
           abrirGavetaComVaga(vaga, idx >= 0 ? idx : 0);

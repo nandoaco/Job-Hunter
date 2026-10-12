@@ -1,14 +1,15 @@
 import React from 'react';
-import { ExternalLink, Trash2 } from 'lucide-react';
+import { Check, ExternalLink, Trash2, Undo2 } from 'lucide-react';
 import ScoreRing from './ScoreRing';
 import CarroselVaga from './CarroselVaga';
 import { formatarTempoRelativo, rotuloStatus } from '../lib/vagas';
 
 const VagaCard = React.forwardRef(function VagaCard(
-  { vaga, topDoDia, focada, selecionada, onAbrir, onCandidatar, onDescartar },
+  { vaga, topDoDia, focada, selecionada, onAbrir, onCandidatar, onAndamento, onDescartar },
   ref
 ) {
   const status = (vaga.status_candidatura || 'NOVA').toUpperCase();
+  const candidatada = status === 'EM_ANDAMENTO';
   const remoto = (vaga.modelo_trabalho || '').toLowerCase().includes('remot');
   const mostrarLocal =
     vaga.localizacao &&
@@ -69,6 +70,17 @@ const VagaCard = React.forwardRef(function VagaCard(
         ) : (
           <button type="button" className="btn" disabled>Sem link da vaga</button>
         )}
+        <button
+          type="button"
+          className="btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAndamento();
+          }}
+        >
+          {candidatada ? <Undo2 size={18} aria-hidden="true" /> : <Check size={18} aria-hidden="true" />}
+          {candidatada ? 'Reabrir' : 'Me candidatei'}
+        </button>
         <button
           type="button"
           className="btn"
